@@ -1,6 +1,6 @@
 # Butter Pop
 
-An original, popcorn-inspired brick breaker for phones, tablets, and desktop browsers. Built with TypeScript, Canvas, and Vite. No runtime services, external fonts, or accounts. Includes 30 dense handcrafted levels; upgrades drop from 14.08% of destroyed bricks. The on-field Launch control appears only for a held ball, with Fire available during the laser upgrade.
+An original, popcorn-inspired brick breaker for phones, tablets, and desktop browsers. Built with TypeScript, Canvas, and Vite. No runtime services, external fonts, or accounts. Includes 30 dense handcrafted levels; ordinary upgrade drops have a 14.08% chance per destroyed brick, with separate guaranteed Classic extra-life opportunities. The on-field Launch control appears only for a held ball, with Fire available during the laser upgrade.
 
 ## Develop
 
@@ -60,3 +60,9 @@ The game uses the browser's standard Gamepad mapping and accepts both bottom/rig
 ## Auto-fire lasers
 
 Open **Options** on the menu or while paused to toggle **Auto-fire lasers**. It defaults off, saves locally, and fires at the normal four-volley-per-second rate while the laser upgrade is active and a ball is in flight. It stops on pause, upgrade expiry, or loss of all balls, and never launches a held ball. Manual and controller firing share the same cooldown.
+
+## Safety Net, Butter Bomb, and extra lives
+
+- **Safety Net:** at most one offer per campaign in each mode. Catch it to arm a green mesh at the bottom. It bounces one missed ball back into play without costing a life, then disappears. An armed net carries across levels and browser restarts; an offered or spent net cannot drop again. New campaigns reset the allowance.
+- **Butter Bomb:** half the random-drop weight of a common upgrade. Catching it loads the next paddle hit with an explosive ball. Its next breakable-brick impact clears a small 3×3 cluster, including tough bricks, and can trigger explosive chains. Indestructible bricks stay intact. The golden paddle and ball ring show the loaded charge. Bombs have no timer; unused charges reset with a lost last ball or a new level.
+- **Classic extra lives:** each level gets one +1-life drop, with a 25% chance of a second. They appear around 35% and 70% of bricks destroyed; no random-pool life drops can exceed the allowance. Missed pickups count as issued. The quota and issued count persist on reload, so reopening a level cannot reroll or farm them. Relaxed mode keeps unlimited retries and has no extra-life drops.

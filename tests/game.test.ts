@@ -1,7 +1,7 @@
 import {ControllerInput,stick} from '../src/controller';
 import type {ControllerPad} from '../src/controller';
 import {describe,it,expect,beforeEach,vi} from 'vitest';
-import {Game,PICKUP_DROP_CHANCE} from '../src/game';
+import {Game,PICKUP_DROP_CHANCE,chooseUpgrade,NET_Y} from '../src/game';
 import {makeBricks,levels,BRICK_GRID} from '../src/levels';
 import {sweep,rebound} from '../src/physics';
 import {readSave,writeSave,checkpointRun} from '../src/storage';
@@ -139,4 +139,48 @@ describe('optional laser autofire',()=>{
  });
  it('never launches held balls or fires while all balls are held',()=>{const g=new Game();g.start('classic',0,3);g.autoFireLasers=true;g.apply('laser');g.update(.1);expect(g.balls[0].held).toBe(true);expect(g.shots).toHaveLength(0);g.action();expect(g.balls[0].held).toBe(false);g.shots=[];g.cooldown=0;g.update(.01);expect(g.shots).toHaveLength(2);});
  it('persists the preference and defaults legacy saves to off',()=>{const map=new Map<string,string>();vi.stubGlobal('localStorage',{getItem:(k:string)=>map.get(k),setItem:(k:string,v:string)=>map.set(k,v)});try{const s=readSave();expect(s.autoFireLasers).toBe(false);s.autoFireLasers=true;writeSave(s);expect(readSave().autoFireLasers).toBe(true);map.clear();map.set('butter-pop-v1',JSON.stringify({version:1,runs:s.runs}));expect(readSave().autoFireLasers).toBe(false);}finally{vi.unstubAllGlobals();}});
+});
+
+describe('single campaign safety net',()=>{
+ it('catches one ball without costing a life, then disappears',()=>{
+  const g=new Game();g.start('classic',0,3);g.apply('net');g.balls=[{x:45,y:NET_Y-12,vx:0,vy:290,held:false}];g.update(.04);
+  expect(g.safetyNet).toBe('spent');expect(g.balls[0].vy).toBeLessThan(0);expect(g.lives).toBe(3);expect(g.netFlash).toBeGreaterThan(0);
+  g.apply('net');expect(g.safetyNet).toBe('spent');g.balls=[{x:45,y:NET_Y-12,vx:0,vy:290,held:false}];g.update(.15);expect(g.lives).toBe(2);expect(g.balls[0].held).toBe(true);
+ });
+ it('only rescues the first missed multiball and freezes while paused',()=>{
+  const g=new Game();g.start('classic',0,3);g.apply('net');g.balls=[40,80].map(x=>({x,y:NET_Y-12,vx:0,vy:290,held:false}));g.pause();g.update(10);expect(g.safetyNet).toBe('armed');g.resume();g.update(3);g.update(.15);expect(g.safetyNet).toBe('spent');expect(g.balls).toHaveLength(1);expect(g.lives).toBe(3);
+ });
+ it('never offers another net even if the first was missed, and only resets on a new campaign',()=>{
+  const g=new Game();g.start('relaxed',0,3);const random=vi.spyOn(Math,'random').mockReturnValue(.99);
+  try{random.mockReturnValueOnce(0).mockReturnValueOnce(.99);g.dropFrom(g.bricks[0]);expect(g.pickups.some(p=>p.type==='net')).toBe(true);expect(g.safetyNet).toBe('offered');g.pickups=[];for(const b of g.bricks)g.damage(b,true);expect(g.pickups.some(p=>p.type==='net')).toBe(false);g.phase='clear';g.next();expect(g.safetyNet).toBe('offered');g.start('relaxed',0,3);expect(g.safetyNet).toBe('unused');}finally{random.mockRestore();}
+ });
+ it('keeps an armed net across levels and loses no charge while waiting for launch',()=>{const g=new Game();g.start('relaxed',0,3);g.apply('net');g.phase='clear';g.next();g.update(1);expect(g.safetyNet).toBe('armed');expect(g.balls[0].held).toBe(true);});
+});
+describe('Butter Bomb',()=>{
+ it('loads on the next paddle hit and explodes on brick contact',()=>{
+  const g=new Game();g.start('classic',0,3);g.apply('bomb');g.balls=[{x:188,y:550,vx:0,vy:290,held:false}];g.update(.08);const ball=g.balls[0];expect(ball.bomb).toBe(true);expect(g.bombReady).toBe(false);
+  const target=g.bricks.find(b=>b.x===174&&b.y===186)!;ball.x=target.x+target.w/2;ball.y=target.y+target.h+9;ball.vx=0;ball.vy=-290;g.update(.03);expect(ball.bomb).toBe(false);expect(g.bricks.filter(b=>b.hp===0)).toHaveLength(9);expect(g.blasts).toHaveLength(1);
+ });
+ it('breaks tough neighbors, preserves obstacles, and does not affect distant bricks',()=>{
+  const g=new Game();g.start('classic',2,3);const center=g.bricks.find(b=>b.x===174&&b.y===120)!;const near=g.bricks.find(b=>b.x===143&&b.y===120)!;near.kind='#';near.hp=Infinity;const far=g.bricks.find(b=>b.x===19)!;g.explode(center);expect(center.hp).toBe(0);expect(near.hp).toBe(Infinity);expect(far.hp).toBe(1);
+ });
+ it('works with sticky and multiball without arming every ball',()=>{const g=new Game();g.start('classic',0,3);g.apply('sticky');g.apply('bomb');g.balls=[170,205].map(x=>({x,y:550,vx:0,vy:290,held:false}));g.update(.08);expect(g.balls.filter(b=>b.bomb)).toHaveLength(1);expect(g.balls.every(b=>b.held)).toBe(true);g.action();expect(g.balls.filter(b=>b.bomb)).toHaveLength(1);g.balls=[];g.update(.001);expect(g.bombReady).toBe(false);expect(g.balls.some(b=>b.bomb)).toBe(false);});
+ it('weights bomb drops at half a common upgrade and removes lives from the random pool',()=>{
+  const counts=new Map<string,number>();for(let i=0;i<3000;i++){const type=chooseUpgrade(i/3000,true);counts.set(type,(counts.get(type)??0)+1);}expect(counts.get('bomb')).toBe(200);expect(counts.get('wide')).toBe(400);expect(counts.has('life')).toBe(false);for(let i=0;i<1000;i++)expect(chooseUpgrade(i/1000,false)).not.toBe('net');
+ });
+});
+describe('bounded Classic life drops and persistent powerups',()=>{
+ it.each([.24,.25,.9])('provides the fixed per-level life budget for random seed %s',roll=>{
+  const random=vi.spyOn(Math,'random').mockReturnValue(roll);try{const g=new Game();g.start('classic',0,3);const quota=roll<.25?2:1;expect(g.lifeQuota).toBe(quota);for(const b of g.bricks)g.damage(b,true);expect(g.pickups.filter(p=>p.type==='life')).toHaveLength(quota);expect(g.lifeIssued).toBe(quota);for(const b of g.bricks)g.damage(b,true);expect(g.lifeIssued).toBe(quota);}finally{random.mockRestore();}
+ });
+ it('drops no extra-life pickups in Relaxed',()=>{const g=new Game();g.start('relaxed',0,3);for(const b of g.bricks)g.damage(b,true);expect(g.pickups.some(p=>p.type==='life')).toBe(false);});
+ it('saves spent nets and issued life budgets so reloads cannot farm them',()=>{
+  const map=new Map<string,string>();vi.stubGlobal('localStorage',{getItem:(key:string)=>map.get(key),setItem:(key:string,value:string)=>map.set(key,value)});const random=vi.spyOn(Math,'random').mockReturnValue(.9);
+  try{const g=new Game();g.start('classic',0,3);for(const b of g.bricks.slice(0,40))g.damage(b,true);expect(g.lifeIssued).toBe(1);g.safetyNet='spent';const save=readSave();save.runs.classic=checkpointRun(g.level,g.lives,g.phase,{safetyNet:g.safetyNet,lifeDrops:{level:g.level,quota:g.lifeQuota,issued:g.lifeIssued,destroyed:g.bricksDestroyed}});writeSave(save);const run=readSave().runs.classic;const resumed=new Game();resumed.start('classic',run.level,run.lives,run);expect(resumed.safetyNet).toBe('spent');for(const b of resumed.bricks)resumed.damage(b,true);expect(resumed.pickups.filter(p=>p.type==='life')).toHaveLength(0);
+   const next=checkpointRun(0,3,'clear',{safetyNet:'armed',lifeDrops:run.lifeDrops});expect(next.safetyNet).toBe('armed');expect(next.lifeDrops).toBeUndefined();expect(checkpointRun(0,0,'over',{safetyNet:'spent'})).toEqual({level:0,lives:3});
+  }finally{random.mockRestore();vi.unstubAllGlobals();}
+ });
+ it('migrates old saves and safely ignores invalid powerup metadata',()=>{
+  vi.stubGlobal('localStorage',{getItem:()=>JSON.stringify({version:1,runs:{classic:{level:5,lives:2,safetyNet:'invalid',lifeDrops:{level:5,quota:9,issued:8,destroyed:0}},relaxed:{level:0,lives:3}}}),setItem:()=>{}});try{expect(readSave().runs.classic).toEqual({level:5,lives:2});}finally{vi.unstubAllGlobals();}
+ });
 });
