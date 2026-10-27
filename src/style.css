@@ -41,3 +41,4 @@ html,body{width:100%;height:100%;overflow:hidden;overscroll-behavior:none}
 .save-status{font:11px/1.4 Arial,sans-serif;color:#806d51;margin:12px 0 0}
 .controller-help{font:11px/1.6 Arial,sans-serif;color:#78684d;margin:12px 0 0}
 .using-controller button:focus{outline:3px solid #537f70;outline-offset:3px}
+#app .home-content #options{display:inline-block}

@@ -72,9 +72,9 @@ describe('expanded campaign and drop tuning',()=>{
   g.start('classic',29,2);g.phase='clear';g.next();expect(g.phase).toBe('complete');
  });
  it('reduces drop probability by 20 percent relative to the previous rate',()=>{
-  expect(PICKUP_DROP_CHANCE).toBeCloseTo(.176);
+  expect(PICKUP_DROP_CHANCE).toBeCloseTo(.1408);
   const random=vi.spyOn(Math,'random');
-  try{for(const [value,count] of [[.175,1],[.176,0],[.20,0]]){random.mockReturnValue(value);const g=new Game();g.start('classic',0,3);g.damage(g.bricks[0]);expect(g.pickups).toHaveLength(count);}}finally{random.mockRestore();}
+  try{for(const [value,count] of [[.1407,1],[.1408,0],[.175,0]]){random.mockReturnValue(value);const g=new Game();g.start('classic',0,3);g.damage(g.bricks[0]);expect(g.pickups).toHaveLength(count);}}finally{random.mockRestore();}
  });
  it('restores both old saves and new later levels',()=>{
   let raw='';vi.stubGlobal('localStorage',{getItem:()=>raw,setItem:(_k:string,v:string)=>{raw=v;}});
@@ -129,4 +129,14 @@ describe('controller input',()=>{
  it('ignores the discovery press and a held button after focus returns',()=>{const input=new ControllerInput();expect(input.poll([pad([1,9])],0).confirm).toBe(false);expect(input.poll([pad([1,9])],20).pause).toBe(false);input.poll([pad([1])],30,false);expect(input.poll([pad([1])],40).confirm).toBe(false);input.poll([pad()],50);expect(input.poll([pad([1])],60).confirm).toBe(true);});
  it('edges Pause, repeats menu navigation at a controlled rate, and releases movement on disconnect',()=>{const input=new ControllerInput();input.poll([pad()],0);expect(input.poll([pad([9])],10).pause).toBe(true);expect(input.poll([pad([9])],20).pause).toBe(false);expect(input.poll([pad([13])],30).nav).toBe(1);expect(input.poll([pad([13])],40).nav).toBe(0);expect(input.poll([pad([13])],380).nav).toBe(1);const lost=input.poll([],400);expect(lost.lost).toBe(true);expect(lost.move).toBe(0);expect(input.poll([pad([1])],420).confirm).toBe(false);});
  it('retains one active controller, handles sparse slots, and safely rejects unmapped devices',()=>{const input=new ControllerInput();input.poll([null,pad([], [0,0],1)],0);expect(input.poll([pad([1]),pad([],[-1,0],1)],10).move).toBe(-1);expect(input.poll([pad([], [0,0],0,'')],20).status).toBe('unmapped');expect(input.poll(null,30).status).toBe('unavailable');});
+});
+
+describe('optional laser autofire',()=>{
+ const setup=()=>{const g=new Game();g.start('classic',0,3);g.apply('laser');g.action();g.shots=[];g.cooldown=0;return g;};
+ it('defaults off and shares the manual firing cooldown',()=>{const g=setup();g.update(.01);expect(g.shots).toHaveLength(0);g.autoFireLasers=true;g.update(.01);expect(g.shots).toHaveLength(2);g.action();expect(g.shots).toHaveLength(2);g.update(.1);expect(g.shots).toHaveLength(2);g.update(.15);expect(g.shots).toHaveLength(4);});
+ it('stops on pause, countdown, expiry, disabling, and loss of all balls',()=>{
+  const g=setup();g.autoFireLasers=true;g.pause();g.update(1);expect(g.shots).toHaveLength(0);g.resume();g.update(3);expect(g.shots).toHaveLength(0);g.autoFireLasers=false;g.update(.01);expect(g.shots).toHaveLength(0);g.autoFireLasers=true;g.effects.laser=.001;g.update(.01);expect(g.shots).toHaveLength(0);g.apply('laser');g.balls=[];g.update(.01);expect(g.shots).toHaveLength(0);expect(g.effects.laser).toBeUndefined();
+ });
+ it('never launches held balls or fires while all balls are held',()=>{const g=new Game();g.start('classic',0,3);g.autoFireLasers=true;g.apply('laser');g.update(.1);expect(g.balls[0].held).toBe(true);expect(g.shots).toHaveLength(0);g.action();expect(g.balls[0].held).toBe(false);g.shots=[];g.cooldown=0;g.update(.01);expect(g.shots).toHaveLength(2);});
+ it('persists the preference and defaults legacy saves to off',()=>{const map=new Map<string,string>();vi.stubGlobal('localStorage',{getItem:(k:string)=>map.get(k),setItem:(k:string,v:string)=>map.set(k,v)});try{const s=readSave();expect(s.autoFireLasers).toBe(false);s.autoFireLasers=true;writeSave(s);expect(readSave().autoFireLasers).toBe(true);map.clear();map.set('butter-pop-v1',JSON.stringify({version:1,runs:s.runs}));expect(readSave().autoFireLasers).toBe(false);}finally{vi.unstubAllGlobals();}});
 });

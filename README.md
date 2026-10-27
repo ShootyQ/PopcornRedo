@@ -1,6 +1,6 @@
 # Butter Pop
 
-An original, popcorn-inspired brick breaker for phones, tablets, and desktop browsers. Built with TypeScript, Canvas, and Vite. No runtime services, external fonts, or accounts. Includes 30 dense handcrafted levels; upgrades drop from 17.6% of destroyed bricks. The on-field Launch control appears only for a held ball, with Fire available during the laser upgrade.
+An original, popcorn-inspired brick breaker for phones, tablets, and desktop browsers. Built with TypeScript, Canvas, and Vite. No runtime services, external fonts, or accounts. Includes 30 dense handcrafted levels; upgrades drop from 14.08% of destroyed bricks. The on-field Launch control appears only for a held ball, with Fire available during the laser upgrade.
 
 ## Develop
 
@@ -56,3 +56,7 @@ Pair a Nintendo Switch Pro Controller through the device's Bluetooth settings (h
 - + / Start: pause or resume with the countdown.
 
 The game uses the browser's standard Gamepad mapping and accepts both bottom/right face buttons to accommodate Nintendo label differences. Unmapped controllers display a message instead of guessing their layout. Disconnecting pauses play; reconnecting never resumes or launches automatically. Touch, mouse, and keyboard continue to work. Browser and device support varies, especially for individual Joy-Cons. Browser audio/fullscreen restrictions can require one initial screen tap or mouse click. Physical controller behavior must still be checked on the target device.
+
+## Auto-fire lasers
+
+Open **Options** on the menu or while paused to toggle **Auto-fire lasers**. It defaults off, saves locally, and fires at the normal four-volley-per-second rate while the laser upgrade is active and a ball is in flight. It stops on pause, upgrade expiry, or loss of all balls, and never launches a held ball. Manual and controller firing share the same cooldown.

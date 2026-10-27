@@ -2,21 +2,23 @@ import {makeBricks,levels} from './levels';
 import {rebound,sweep} from './physics';
 import type {Ball,Brick,Mode,Phase,Pickup,Upgrade} from './types';
 export const labels:Record<Upgrade,string>={wide:'WIDE',sticky:'STICKY',multi:'MULTI',slow:'SLOW',laser:'LASER',strong:'POWER',life:'+1 LIFE'};
-// 20% fewer drops than the original 22% chance.
-export const PICKUP_DROP_CHANCE=.176;
+// A further 20% reduction from the previous 17.6% chance.
+export const PICKUP_DROP_CHANCE=.1408;
 export const upgrades=Object.keys(labels) as Upgrade[];
 export class Game {
+ autoFireLasers=false;
  phase:Phase='home';mode:Mode='relaxed';level=0;lives=3;paddle=188;balls:Ball[]=[];bricks:Brick[]=[];pickups:Pickup[]=[];shots:{x:number;y:number}[]=[];effects:Partial<Record<Upgrade,number>>={};particles:{x:number;y:number;vx:number;vy:number;ttl:number;color:number}[]=[];countdown=0;cooldown=0;message='';messageTime=0;
  onChange=()=>{};onBoundary=()=>{};onSound=(high:boolean)=>{};
  get width(){return this.effects.wide?108:76;}
  get speed(){return (290+this.level*5)*(this.effects.slow?.68:1);}
  start(mode:Mode,level:number,lives:number){this.mode=mode;this.level=level;this.lives=lives;this.load();}
- resetEffects(){this.effects={};this.pickups=[];this.shots=[];}
+ resetEffects(){this.effects={};this.pickups=[];this.shots=[];this.cooldown=0;}
  load(){this.bricks=makeBricks(this.level);this.resetEffects();this.paddle=188;this.balls=[this.held()];this.phase='playing';this.particles=[];this.onChange();}
  held():Ball{return {x:this.paddle,y:557,vx:0,vy:0,held:true};}
  positionHeld(b:Ball){const offset=Math.max(-this.width/2-6,Math.min(this.width/2+6,b.heldOffset??0));b.x=Math.max(7,Math.min(369,this.paddle+offset));b.y=557;if(b.heldOffset!==undefined)b.heldOffset=b.x-this.paddle;}
  move(x:number){this.paddle=Math.max(this.width/2+8,Math.min(368-this.width/2,x));}
- action(){if(this.phase!=='playing')return;for(const b of this.balls)if(b.held){const offset=b.heldOffset;this.positionHeld(b);Object.assign(b,rebound(offset===undefined?.15:offset/(this.width/2),this.speed),{held:false});delete b.heldOffset;}if(this.effects.laser&&this.cooldown<=0){this.shots.push({x:this.paddle-22,y:565},{x:this.paddle+22,y:565});this.cooldown=.25;this.onSound(true);}this.onChange();}
+ action(){if(this.phase!=='playing')return;for(const b of this.balls)if(b.held){const offset=b.heldOffset;this.positionHeld(b);Object.assign(b,rebound(offset===undefined?.15:offset/(this.width/2),this.speed),{held:false});delete b.heldOffset;}this.fireLasers();this.onChange();}
+ fireLasers(){if(this.phase==='playing'&&this.effects.laser&&this.cooldown<=0){this.shots.push({x:this.paddle-22,y:565},{x:this.paddle+22,y:565});this.cooldown=.25;this.onSound(true);}}
  pause(){if(this.phase==='playing'||this.phase==='countdown'){this.phase='paused';this.onChange();}}
  resume(){this.countdown=3;this.phase='countdown';this.onChange();}
  next(){if(this.level===levels.length-1){this.phase='complete';this.onBoundary();this.onChange();return;}this.level++;this.load();this.onBoundary();}
@@ -27,6 +29,7 @@ export class Game {
  if(this.phase!=='playing')return;
  for(const type of upgrades)if(this.effects[type]){this.effects[type]!-=dt;if(this.effects[type]!<=0){delete this.effects[type];this.onChange();}}
  this.cooldown-=dt;this.messageTime-=dt;
+ if(this.autoFireLasers&&this.balls.some(ball=>!ball.held))this.fireLasers();
  for(const p of this.particles){p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=320*dt;p.ttl-=dt;}this.particles=this.particles.filter(p=>p.ttl>0);
  for(const b of this.balls){
  if(b.held){this.positionHeld(b);continue;}
