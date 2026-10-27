@@ -23,3 +23,23 @@ describe('storage',()=>{
 it('handles invalid and blocked storage and restores separate runs',()=>{const map=new Map<string,string>();vi.stubGlobal('localStorage',{getItem:(k:string)=>map.get(k),setItem:(k:string,v:string)=>map.set(k,v)});const s=readSave();s.runs.classic={level:8,lives:2};s.muted=true;writeSave(s);expect(readSave()).toEqual(s);map.set('butter-pop-v1','bad');expect(readSave().runs.classic.level).toBe(0);vi.stubGlobal('localStorage',{getItem:()=>{throw Error();},setItem:()=>{throw Error();}});expect(()=>writeSave(readSave())).not.toThrow();vi.unstubAllGlobals();});
 });
 describe('full layouts',()=>{it('can clear every level with paddle movement and normal game rules',()=>{vi.spyOn(Math,'random').mockReturnValue(.5);try{for(let level=0;level<15;level++){const g=new Game();g.start('relaxed',level,3);for(let step=0;step<120*600&&g.phase==='playing';step++){const ball=g.balls.find(b=>!b.held)||g.balls[0];g.move(ball.x+Math.sin(step/180)*24);if(g.balls.some(b=>b.held))g.action();g.update(1/120);}expect(g.phase,`level ${level+1} should be reachable`).toBe('clear');}}finally{vi.restoreAllMocks();}},15000);});
+
+describe('sticky contact and launch',()=>{
+ it.each([-28,0,28])('holds contact offset %s and launches from that side',offset=>{
+  const g=new Game();g.start('classic',0,3);g.apply('sticky');
+  g.balls=[{x:g.paddle+offset,y:550,vx:0,vy:290,held:false}];
+  const changed=vi.fn();g.onChange=changed;g.update(.08);
+  const b=g.balls[0];expect(b.held).toBe(true);expect(b.heldOffset).toBeCloseTo(offset);expect(changed).toHaveBeenCalled();
+  g.move(240);g.update(.01);expect(b.x).toBeCloseTo(240+offset);
+  g.action();expect(b.held).toBe(false);expect(b.x).toBeCloseTo(240+offset);expect(b.vy).toBeLessThan(0);expect(Math.sign(b.vx)).toBe(Math.sign(offset));
+ });
+ it('keeps each sticky multiball contact independent after the effect expires',()=>{
+  const g=new Game();g.start('classic',0,3);g.apply('sticky');
+  g.balls=[-25,25].map(offset=>({x:g.paddle+offset,y:550,vx:0,vy:290,held:false}));g.update(.08);
+  g.effects.sticky=.001;g.update(.01);expect(g.effects.sticky).toBeUndefined();g.move(210);g.action();
+  expect(g.balls[0].x).toBeCloseTo(185);expect(g.balls[1].x).toBeCloseTo(235);expect(g.balls[0].vx).toBeLessThan(0);expect(g.balls[1].vx).toBeGreaterThan(0);
+ });
+ it('keeps edge catches inside the arena when moving to a wall',()=>{
+  const g=new Game();g.start('classic',0,3);g.apply('sticky');g.balls=[{x:g.paddle+42,y:550,vx:0,vy:290,held:false}];g.update(.08);g.move(1000);g.update(.01);expect(g.balls[0].x).toBeLessThanOrEqual(369);g.action();expect(g.balls[0].vx).toBeGreaterThan(0);
+ });
+});

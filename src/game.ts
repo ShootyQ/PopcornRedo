@@ -12,8 +12,9 @@ export class Game {
  resetEffects(){this.effects={};this.pickups=[];this.shots=[];}
  load(){this.bricks=makeBricks(this.level);this.resetEffects();this.paddle=188;this.balls=[this.held()];this.phase='playing';this.particles=[];this.onChange();}
  held():Ball{return {x:this.paddle,y:557,vx:0,vy:0,held:true};}
+ positionHeld(b:Ball){const offset=Math.max(-this.width/2-6,Math.min(this.width/2+6,b.heldOffset??0));b.x=Math.max(7,Math.min(369,this.paddle+offset));b.y=557;if(b.heldOffset!==undefined)b.heldOffset=b.x-this.paddle;}
  move(x:number){this.paddle=Math.max(this.width/2+8,Math.min(368-this.width/2,x));}
- action(){if(this.phase!=='playing')return;for(const b of this.balls)if(b.held){Object.assign(b,rebound(.15,this.speed),{held:false});}if(this.effects.laser&&this.cooldown<=0){this.shots.push({x:this.paddle-22,y:565},{x:this.paddle+22,y:565});this.cooldown=.25;this.onSound(true);}this.onChange();}
+ action(){if(this.phase!=='playing')return;for(const b of this.balls)if(b.held){const offset=b.heldOffset;this.positionHeld(b);Object.assign(b,rebound(offset===undefined?.15:offset/(this.width/2),this.speed),{held:false});delete b.heldOffset;}if(this.effects.laser&&this.cooldown<=0){this.shots.push({x:this.paddle-22,y:565},{x:this.paddle+22,y:565});this.cooldown=.25;this.onSound(true);}this.onChange();}
  pause(){if(this.phase==='playing'||this.phase==='countdown'){this.phase='paused';this.onChange();}}
  resume(){this.countdown=3;this.phase='countdown';this.onChange();}
  next(){if(this.level===14){this.phase='complete';this.onBoundary();this.onChange();return;}this.level++;this.onBoundary();this.load();}
@@ -26,7 +27,7 @@ export class Game {
  this.cooldown-=dt;this.messageTime-=dt;
  for(const p of this.particles){p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=320*dt;p.ttl-=dt;}this.particles=this.particles.filter(p=>p.ttl>0);
  for(const b of this.balls){
- if(b.held){b.x=this.paddle;b.y=557;continue;}
+ if(b.held){this.positionHeld(b);continue;}
  const speed=this.speed,mag=Math.hypot(b.vx,b.vy);b.vx=b.vx/mag*speed;b.vy=b.vy/mag*speed;
  let remaining=dt;
  for(let n=0;n<8&&remaining>1e-7;n++){
@@ -38,7 +39,7 @@ export class Game {
  for(const brick of this.bricks)if(brick.hp>0)consider(sweep(b.x,b.y,dx,dy,brick.x,brick.y,brick.w,brick.h),brick);
  if(best.t>1||best.t<0){b.x+=dx;b.y+=dy;break;}
  b.x+=dx*best.t;b.y+=dy*best.t;remaining*=1-best.t;
- if(paddleHit){Object.assign(b,rebound((b.x-this.paddle)/(this.width/2),speed));if(this.effects.sticky){b.held=true;b.y=557;break;}this.onSound(false);}else{if(best.nx)b.vx*=-1;if(best.ny)b.vy*=-1;if(target)this.damage(target);}
+ if(paddleHit){Object.assign(b,rebound((b.x-this.paddle)/(this.width/2),speed));if(this.effects.sticky){b.held=true;b.heldOffset=b.x-this.paddle;b.y=557;this.onChange();break;}this.onSound(false);}else{if(best.nx)b.vx*=-1;if(best.ny)b.vy*=-1;if(target)this.damage(target);}
  b.x+=best.nx*.05;b.y+=best.ny*.05;
  }
  }
