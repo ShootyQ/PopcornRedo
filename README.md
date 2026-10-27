@@ -38,3 +38,7 @@ Pushes to `main` run the rule tests, build, and deploy through `.github/workflow
 ## Build number
 
 The game frame shows **Build N** on the menu and throughout play, including phone landscape. N is the GitHub Actions workflow run number, embedded at build time so it identifies the version actually loaded. Reruns show an attempt suffix (for example, Build 12.2). Local development displays Build DEV; local production builds display Build LOCAL. Match player reports to the numbered deployment in Actions.
+
+## Screen and fullscreen behavior
+
+Every screen fits the viewport without document or menu scrolling. Start/Continue requests browser fullscreen directly from the player's tap. Unsupported or denied requests fall back to the same viewport-filling game. Pause offers Enter/Exit fullscreen where supported and a sound toggle. Leaving fullscreen through the browser pauses play; returning to the menu exits fullscreen. Browser fullscreen support varies on iPhone, so Safari may retain its browser bars. Menus scale to fit short landscape screens, and safe-area padding keeps controls away from notches.

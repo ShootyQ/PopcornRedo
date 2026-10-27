@@ -17,3 +17,24 @@ canvas{user-select:none;-webkit-user-select:none}
 .control-strip #build-label{flex:0 0 auto;font:10px monospace;letter-spacing:0;color:#78684d;white-space:nowrap}
 /* Fire is also a drag surface; a finger starting here must not pan the browser. */
 #action{touch-action:none}
+/* The viewport is the app: fit the cabinet rather than scrolling the document. */
+html,body{width:100%;height:100%;overflow:hidden;overscroll-behavior:none}
+#app{position:fixed;inset:0;width:100%;height:100dvh;min-height:0;overflow:hidden;display:flex;flex-direction:column;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);background:#fcf4df}
+#app:fullscreen{height:100%;width:100%;background:#fcf4df}
+#app .site-header{flex:0 0 64px;height:64px;width:100%;padding:0 24px}
+#app footer{flex:0 0 32px;width:100%;padding:8px 24px}
+#app main,#app.is-gameplay main{flex:1;min-height:0;max-width:100%;width:100%;margin:0;display:flex;justify-content:center;gap:40px;padding:8px 12px 16px;overflow:hidden}
+#app.is-gameplay .site-header,#app.is-gameplay footer{display:none}
+#app .cabinet{flex:0 0 auto;max-width:100%;padding:11px}
+#app .cabinet-top{height:23px;padding:2px 4px 8px;overflow:hidden;gap:8px;white-space:nowrap}
+#app .cabinet-top span:first-child{overflow:hidden;text-overflow:ellipsis}
+#app .playfield{aspect-ratio:376/650}
+#app canvas{position:absolute;inset:0;width:100%;height:100%}
+#app .control-strip{height:53px;min-height:53px;padding-top:9px}
+#app #pause{min-height:44px;min-width:48px}
+#app #effects{position:static;height:14px;min-height:14px;font-size:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#app #overlay{overflow:hidden}
+#app #overlay>div{position:absolute;left:50%;top:50%;width:376px;min-height:650px;transform:translate(-50%,-50%) scale(var(--menu-scale,.5));transform-origin:center}
+#app .compact-cabinet #level-name{display:none}
+@media(max-width:1099px){#app .intro,#app .recipe{display:none}}
+@media(orientation:landscape) and (max-height:600px){#app .site-header,#app footer{display:none}}
