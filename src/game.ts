@@ -2,6 +2,8 @@ import {makeBricks,levels} from './levels';
 import {rebound,sweep} from './physics';
 import type {Ball,Brick,Mode,Phase,Pickup,Upgrade} from './types';
 export const labels:Record<Upgrade,string>={wide:'WIDE',sticky:'STICKY',multi:'MULTI',slow:'SLOW',laser:'LASER',strong:'POWER',life:'+1 LIFE'};
+// 20% fewer drops than the original 22% chance.
+export const PICKUP_DROP_CHANCE=.176;
 export const upgrades=Object.keys(labels) as Upgrade[];
 export class Game {
  phase:Phase='home';mode:Mode='relaxed';level=0;lives=3;paddle=188;balls:Ball[]=[];bricks:Brick[]=[];pickups:Pickup[]=[];shots:{x:number;y:number}[]=[];effects:Partial<Record<Upgrade,number>>={};particles:{x:number;y:number;vx:number;vy:number;ttl:number;color:number}[]=[];countdown=0;cooldown=0;message='';messageTime=0;
@@ -17,9 +19,9 @@ export class Game {
  action(){if(this.phase!=='playing')return;for(const b of this.balls)if(b.held){const offset=b.heldOffset;this.positionHeld(b);Object.assign(b,rebound(offset===undefined?.15:offset/(this.width/2),this.speed),{held:false});delete b.heldOffset;}if(this.effects.laser&&this.cooldown<=0){this.shots.push({x:this.paddle-22,y:565},{x:this.paddle+22,y:565});this.cooldown=.25;this.onSound(true);}this.onChange();}
  pause(){if(this.phase==='playing'||this.phase==='countdown'){this.phase='paused';this.onChange();}}
  resume(){this.countdown=3;this.phase='countdown';this.onChange();}
- next(){if(this.level===14){this.phase='complete';this.onBoundary();this.onChange();return;}this.level++;this.onBoundary();this.load();}
+ next(){if(this.level===levels.length-1){this.phase='complete';this.onBoundary();this.onChange();return;}this.level++;this.onBoundary();this.load();}
  apply(type:Upgrade){if(type==='life'&&this.mode==='relaxed')type='wide';if(type==='life')this.lives++;else if(type==='multi'){const source=this.balls.find(b=>!b.held)||this.balls[0];if(source)for(const offset of [-.55,.55])if(this.balls.length<5)this.balls.push({x:source.x,y:source.y,...rebound(offset,this.speed),held:false});}else this.effects[type]=15;this.message=labels[type];this.messageTime=2;this.onSound(true);this.onChange();}
- damage(brick:Brick){if(brick.hp<=0||brick.kind==='#')return;brick.hp-=this.effects.strong?2:1;if(brick.hp>0){this.onSound(false);return;}this.onSound(true);for(let i=0;i<7;i++)this.particles.push({x:brick.x+brick.w/2,y:brick.y+brick.h/2,vx:(Math.random()-.5)*150,vy:-Math.random()*130,ttl:.55,color:brick.color});if(Math.random()<.22)this.pickups.push({x:brick.x+brick.w/2,y:brick.y,type:upgrades[Math.floor(Math.random()*7)]});if(brick.kind==='e')for(const other of this.bricks)if(other!==brick&&Math.abs(other.x-brick.x)<=Math.max(other.w,brick.w)+7&&Math.abs(other.y-brick.y)<=Math.max(other.h,brick.h)+9)this.damage(other);}
+ damage(brick:Brick){if(brick.hp<=0||brick.kind==='#')return;brick.hp-=this.effects.strong?2:1;if(brick.hp>0){this.onSound(false);return;}this.onSound(true);for(let i=0;i<7;i++)this.particles.push({x:brick.x+brick.w/2,y:brick.y+brick.h/2,vx:(Math.random()-.5)*150,vy:-Math.random()*130,ttl:.55,color:brick.color});if(Math.random()<PICKUP_DROP_CHANCE)this.pickups.push({x:brick.x+brick.w/2,y:brick.y,type:upgrades[Math.floor(Math.random()*7)]});if(brick.kind==='e')for(const other of this.bricks)if(other!==brick&&Math.abs(other.x-brick.x)<=Math.max(other.w,brick.w)+7&&Math.abs(other.y-brick.y)<=Math.max(other.h,brick.h)+9)this.damage(other);}
  update(dt:number){
  if(this.phase==='countdown'){this.countdown-=dt;if(this.countdown<=0){this.phase='playing';this.onChange();}return;}
  if(this.phase!=='playing')return;

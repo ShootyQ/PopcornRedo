@@ -46,7 +46,52 @@ export const levels:Level[] = [
  'sss#sss#sss','sssssssssss','tsesssssest','sssssssssss','stststststs','sssssssssss']},
 {name:'The big pop',rows:[
  'tttetttettt','tsssstsssst','esesesesese','sssssssssss',
- 'ss#sssss#ss','stststststs','sssesesesss','sssssssssss','tststststst','sssssssssss']}
+ 'ss#sssss#ss','stststststs','sssesesesss','sssssssssss','tststststst','sssssssssss']},
+{name:'Encore',rows:[
+ 'sssssssssss','stststststs','sssssssssss','sssesesesss','sssssssssss',
+ 'stststststs','sssssssssss','sssesesesss','sssssssssss','stststststs']},
+{name:'Caramel ribbons',rows:[
+ 'ttsssssssss','sttssssssss','ssttsssssss','sssttssssss','ssssttsssss',
+ 'sssssttssss','ssssssttsss','sssssssttss','sssssssstts','ssssssssstt']},
+{name:'Popcorn plaza',rows:[
+ 'ttttttttttt','sssssssssss','ss.sssss.ss','ss.seses.ss','ss.sssss.ss',
+ 'ss.sssss.ss','ss.seses.ss','ss.sssss.ss','sssssssssss','ttttttttttt']},
+{name:'Pinball picnic',rows:[
+ 'sssssssssss','tststststst','sssssssssss','ss#sssss#ss','sssssssssss',
+ 'sssesesesss','sssssssssss','stststststs','sssssssssss','sssss.sssss']},
+{name:'Firecracker',rows:[
+ 'tststststst','seseseseses','sssssssssss','stesesesets','sssssssssss',
+ 'esesesesese','sssssssssss','stesesesets','sssssssssss','tststststst']},
+{name:'Diamond dozen',rows:[
+ 'sssstttssss','ssstssstsss','sstssssstss','stsssesssts','tssssssssst',
+ 'tsssesessst','stsssssssts','sstssssstss','ssstssstsss','sssstttssss']},
+{name:'Intermission',rows:[
+ 'sssssssssss','sssssssssss','sssesesesss','sssssssssss','tttsssssttt',
+ 'sss..#..sss','sssssssssss','sssesesesss','sssssssssss','sssssssssss']},
+{name:'Butter braids',rows:[
+ 'ststssststs','sststststss','ssstststsss','sssststssss','ssssstsssss',
+ 'sssststssss','ssstststsss','sststststss','ststssststs','tstssssstst']},
+{name:'Crackle tower',rows:[
+ 'tttssessstt','stsssesssts','sssssesssss','sssssesssss','ss#ssess#ss',
+ 'sssssesssss','stsssesssts','sssssesssss','tttssessstt','sssssesssss']},
+{name:'Moonlight matinee',rows:[
+ 'ssstttttsss','sstssssstss','stsssssssts','tssssssssst','tsss...ssst',
+ 'tsssesessst','tssssssssst','stsssssssts','sstssssstss','ssstttttsss']},
+{name:'Salt & sparkle',rows:[
+ 'tststststst','seseseseses','stststststs','esesesesese','tststststst',
+ 'ss#sssss#ss','stststststs','seseseseses','sssssssssss','tststststst']},
+{name:'The royal box',rows:[
+ 'ttttttttttt','tssssssssst','tsstttttsst','tsssesessst','tss.....sst',
+ 'tss..#..sst','tsssesessst','tsstttttsst','tssssssssst','ttttttttttt']},
+{name:'Confetti cannon',rows:[
+ 'sssssssssss','setstststes','ssesesssess','sssssssssss','stststststs',
+ 'seseseseses','sssssssssss','ttesttstett','ssesesssess','sssssssssss']},
+{name:'Standing ovation',rows:[
+ 'ttstttttstt','ssstssstsss','ssstssstsss','seseseseses','sssssssssss',
+ 'ss#sssss#ss','ttstttttstt','ssstssstsss','seseseseses','sssssssssss']},
+{name:'The grand finale',rows:[
+ 'ttetttttett','stststststs','esesesesese','ttssssssstt','sss#sss#sss',
+ 'sssesesesss','tststststst','sssssssssss','setstststes','sssssssssss']}
 ];
 export const BRICK_GRID={columns:11,x:19,y:120,pitchX:31,pitchY:22,width:27,height:16};
 export function makeBricks(index:number):Brick[] {

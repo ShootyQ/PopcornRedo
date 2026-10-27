@@ -11,7 +11,7 @@ export function render(ctx:CanvasRenderingContext2D,g:Game,reduced:boolean){
  for(const s of g.shots){ctx.fillStyle='#e7664d';ctx.fillRect(s.x-2,s.y,4,14);}
  ctx.fillStyle=g.effects.sticky?'#84aa96':'#e46f55';ctx.beginPath();ctx.roundRect(g.paddle-g.width/2,570,g.width,12,6);ctx.fill();ctx.fillStyle='#ffffff75';ctx.fillRect(g.paddle-g.width/2+8,572,g.width-16,2);
  for(const b of g.balls){ctx.fillStyle='#6b4f35';ctx.beginPath();ctx.arc(b.x,b.y,7,0,7);ctx.fill();ctx.fillStyle=g.effects.strong?'#ee9e38':'#fff2b5';ctx.beginPath();ctx.arc(b.x,b.y-1,5,0,7);ctx.fill();}
- ctx.textAlign='center';ctx.fillStyle='#ad9c83';ctx.font='10px monospace';ctx.fillText('←  DRAG HERE TO MOVE  →',188,625);
+ ctx.textAlign='center';ctx.fillStyle='#ad9c83';ctx.font='10px monospace';if(!g.balls.some(b=>b.held)&&!g.effects.laser)ctx.fillText('←  DRAG HERE TO MOVE  →',188,625);
  if(g.messageTime>0){ctx.fillStyle='#65513b';ctx.font='bold 11px monospace';ctx.fillText(g.message,188,530);}
  if(g.phase==='countdown'){ctx.fillStyle='#fff9ebcc';ctx.fillRect(0,47,376,550);ctx.font='bold 68px Georgia';ctx.fillStyle='#e46f55';ctx.fillText(String(Math.ceil(g.countdown)),188,340);}
 }

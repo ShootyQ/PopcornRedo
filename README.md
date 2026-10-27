@@ -1,6 +1,6 @@
 # Butter Pop
 
-An original, popcorn-inspired brick breaker for phones, tablets, and desktop browsers. Built with TypeScript, Canvas, and Vite. No runtime services, external fonts, or accounts.
+An original, popcorn-inspired brick breaker for phones, tablets, and desktop browsers. Built with TypeScript, Canvas, and Vite. No runtime services, external fonts, or accounts. Includes 30 dense handcrafted levels; upgrades drop from 17.6% of destroyed bricks. The on-field Launch control appears only for a held ball, with Fire available during the laser upgrade.
 
 ## Develop
 
