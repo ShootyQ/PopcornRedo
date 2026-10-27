@@ -1,7 +1,7 @@
 import {ControllerInput,stick} from '../src/controller';
 import type {ControllerPad} from '../src/controller';
 import {describe,it,expect,beforeEach,vi} from 'vitest';
-import {Game,PICKUP_DROP_CHANCE,chooseUpgrade,NET_Y} from '../src/game';
+import {Game,PICKUP_DROP_CHANCE,chooseUpgrade,NET_Y,PICKUP_DROP_GAP} from '../src/game';
 import {makeBricks,levels,BRICK_GRID} from '../src/levels';
 import {sweep,rebound} from '../src/physics';
 import {readSave,writeSave,checkpointRun} from '../src/storage';
@@ -71,10 +71,10 @@ describe('expanded campaign and drop tuning',()=>{
   const g=new Game();g.start('classic',14,2);g.phase='clear';g.next();expect(g.level).toBe(15);expect(g.phase).toBe('playing');expect(g.lives).toBe(2);
   g.start('classic',29,2);g.phase='clear';g.next();expect(g.phase).toBe('complete');
  });
- it('reduces drop probability by 20 percent relative to the previous rate',()=>{
-  expect(PICKUP_DROP_CHANCE).toBeCloseTo(.1408);
+ it('keeps ordinary drop chance at eight percent',()=>{
+  expect(PICKUP_DROP_CHANCE).toBeCloseTo(.08);
   const random=vi.spyOn(Math,'random');
-  try{for(const [value,count] of [[.1407,1],[.1408,0],[.175,0]]){random.mockReturnValue(value);const g=new Game();g.start('classic',0,3);g.damage(g.bricks[0]);expect(g.pickups).toHaveLength(count);}}finally{random.mockRestore();}
+  try{for(const [value,count] of [[.0799,1],[.08,0],[.14,0]]){random.mockReturnValue(value);const g=new Game();g.start('classic',0,3);g.damage(g.bricks[0]);expect(g.pickups).toHaveLength(count);}}finally{random.mockRestore();}
  });
  it('restores both old saves and new later levels',()=>{
   let raw='';vi.stubGlobal('localStorage',{getItem:()=>raw,setItem:(_k:string,v:string)=>{raw=v;}});
@@ -166,7 +166,7 @@ describe('Butter Bomb',()=>{
  });
  it('works with sticky and multiball without arming every ball',()=>{const g=new Game();g.start('classic',0,3);g.apply('sticky');g.apply('bomb');g.balls=[170,205].map(x=>({x,y:550,vx:0,vy:290,held:false}));g.update(.08);expect(g.balls.filter(b=>b.bomb)).toHaveLength(1);expect(g.balls.every(b=>b.held)).toBe(true);g.action();expect(g.balls.filter(b=>b.bomb)).toHaveLength(1);g.balls=[];g.update(.001);expect(g.bombReady).toBe(false);expect(g.balls.some(b=>b.bomb)).toBe(false);});
  it('weights bomb drops at half a common upgrade and removes lives from the random pool',()=>{
-  const counts=new Map<string,number>();for(let i=0;i<3000;i++){const type=chooseUpgrade(i/3000,true);counts.set(type,(counts.get(type)??0)+1);}expect(counts.get('bomb')).toBe(200);expect(counts.get('wide')).toBe(400);expect(counts.has('life')).toBe(false);for(let i=0;i<1000;i++)expect(chooseUpgrade(i/1000,false)).not.toBe('net');
+  const counts=new Map<string,number>();for(let i=0;i<13500;i++){const type=chooseUpgrade(i/13500,true);counts.set(type,(counts.get(type)??0)+1);}expect(counts.get('bomb')).toBe(1000);expect(counts.get('wide')).toBe(2000);expect(counts.has('life')).toBe(false);for(let i=0;i<1000;i++)expect(chooseUpgrade(i/1000,false)).not.toBe('net');
  });
 });
 describe('bounded Classic life drops and persistent powerups',()=>{
@@ -183,4 +183,19 @@ describe('bounded Classic life drops and persistent powerups',()=>{
  it('migrates old saves and safely ignores invalid powerup metadata',()=>{
   vi.stubGlobal('localStorage',{getItem:()=>JSON.stringify({version:1,runs:{classic:{level:5,lives:2,safetyNet:'invalid',lifeDrops:{level:5,quota:9,issued:8,destroyed:0}},relaxed:{level:0,lives:3}}}),setItem:()=>{}});try{expect(readSave().runs.classic).toEqual({level:5,lives:2});}finally{vi.unstubAllGlobals();}
  });
+});
+
+describe('powerup balance and weapon feedback loops',()=>{
+ it('makes laser weight one quarter of a common pickup and excludes it when unavailable',()=>{const counts=new Map<string,number>();for(let i=0;i<13500;i++){const type=chooseUpgrade(i/13500,true);counts.set(type,(counts.get(type)??0)+1);}expect(counts.get('laser')).toBe(500);expect(counts.get('wide')).toBe(2000);for(let i=0;i<1000;i++)expect(chooseUpgrade(i/1000,true,false)).not.toBe('laser');});
+ it('spaces ordinary drops by active play time and never refreshes an active or falling laser',()=>{
+  const g=new Game();g.start('relaxed',0,3);const random=vi.spyOn(Math,'random').mockReturnValue(0);try{g.dropFrom(g.bricks[0]);expect(g.pickups).toHaveLength(1);g.dropFrom(g.bricks[1]);expect(g.pickups).toHaveLength(1);expect(g.dropCooldown).toBe(PICKUP_DROP_GAP);g.pause();g.update(10);expect(g.dropCooldown).toBe(PICKUP_DROP_GAP);g.resume();g.update(3);g.update(2);g.dropFrom(g.bricks[1]);expect(g.pickups).toHaveLength(2);
+   for(const active of [true,false]){g.dropCooldown=0;g.pickups=active?[]:[{x:20,y:100,type:'laser'}];g.effects=active?{laser:15}:{};random.mockReturnValueOnce(0).mockReturnValueOnce(.78);g.dropFrom(g.bricks[2]);expect(g.pickups.filter(p=>p.type==='laser')).toHaveLength(active?0:1);}
+  }finally{random.mockRestore();}
+ });
+ it('prevents laser shots, bombs, and explosive chain splash from generating random drops',()=>{
+  const g=new Game();g.start('relaxed',0,3);const random=vi.spyOn(Math,'random').mockReturnValue(0);try{const brick=g.bricks[g.bricks.length-1];g.shots=[{x:brick.x+brick.w/2,y:brick.y+brick.h+1}];g.update(.02);expect(brick.hp).toBe(0);expect(g.pickups).toHaveLength(0);g.explode(g.bricks[15]);expect(g.pickups).toHaveLength(0);
+   g.bricks[0].kind='e';g.damage(g.bricks[0]);expect(g.pickups).toHaveLength(1);
+  }finally{random.mockRestore();}
+ });
+ it('still issues the promised life budget when every brick is destroyed by weapons',()=>{const g=new Game();g.start('classic',0,3);g.lifeQuota=2;for(const brick of g.bricks)g.damage(brick,true,false);expect(g.pickups.map(p=>p.type)).toEqual(['life','life']);});
 });
