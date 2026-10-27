@@ -14,6 +14,7 @@ function begin(){sound.unlock();const run=save.runs[selected];game.start(selecte
 function home(){game.phase='home';ui();}
 function button(id:string,text:string,cls='big-button'){return `<button id="${id}" class="${cls}">${text}</button>`;}
 function ui(){
+ app.classList.toggle('is-gameplay',game.phase!=='home');
  mute.textContent=save.muted?'♪ OFF':'♪ ON';mute.setAttribute('aria-pressed',String(save.muted));
  pause.hidden=game.phase==='home';const canLaunch=game.balls.some(b=>b.held);action.hidden=game.phase!=='playing'||(!canLaunch&&!game.effects.laser);action.textContent=canLaunch?'Launch ↑':'Fire ✦';
  document.querySelector('#level-name')!.textContent=game.phase==='home'?'MADE FOR A LITTLE BREAK':game.title.toUpperCase();
@@ -35,6 +36,9 @@ let drag:{id:number;x:number;paddle:number}|null=null;
 canvas.addEventListener('pointerdown',e=>{if(game.phase!=='playing')return;const rect=canvas.getBoundingClientRect();if((e.clientY-rect.top)/rect.height*650<390)return;sound.unlock();drag={id:e.pointerId,x:e.clientX,paddle:game.paddle};canvas.setPointerCapture(e.pointerId);});
 canvas.addEventListener('pointermove',e=>{if(drag&&drag.id===e.pointerId&&game.phase==='playing')game.move(drag.paddle+(e.clientX-drag.x)*376/canvas.getBoundingClientRect().width);});
 for(const event of ['pointerup','pointercancel','lostpointercapture'])canvas.addEventListener(event,()=>{drag=null;});
+// A rotation changes the mapping between screen pixels and game coordinates.
+function resetDrag(){if(drag&&canvas.hasPointerCapture(drag.id))canvas.releasePointerCapture(drag.id);drag=null;}
+window.addEventListener('resize',resetDrag);window.visualViewport?.addEventListener('resize',resetDrag);
 const keys=new Set<string>();window.addEventListener('keydown',e=>{if(e.target instanceof HTMLButtonElement)return;if(['ArrowLeft','ArrowRight','Space'].includes(e.code)){e.preventDefault();keys.add(e.code);if(e.code==='Space'&&!e.repeat){sound.unlock();game.action();}}if(e.code==='Escape')game.pause();});window.addEventListener('keyup',e=>keys.delete(e.code));window.addEventListener('blur',()=>{keys.clear();drag=null;game.pause();});document.addEventListener('visibilitychange',()=>{if(document.hidden){keys.clear();game.pause();}});
 const reduced=matchMedia('(prefers-reduced-motion: reduce)');let last=performance.now(),acc=0,lastEffects='';
 function frame(now:number){acc+=Math.min((now-last)/1000,.1);last=now;while(acc>=1/120){if(game.phase==='playing'){if(keys.has('ArrowLeft'))game.move(game.paddle-420/120);if(keys.has('ArrowRight'))game.move(game.paddle+420/120);}game.update(1/120);acc-=1/120;}const ratio=Math.min(devicePixelRatio||1,2),w=Math.round(376*ratio),h=Math.round(650*ratio);if(canvas.width!==w||canvas.height!==h){canvas.width=w;canvas.height=h;}ctx.setTransform(ratio,0,0,ratio,0,0);render(ctx,game,reduced.matches);const effects=upgrades.filter(u=>game.effects[u]).map(u=>`${labels[u]} ${Math.ceil(game.effects[u]!)}s`).join(' · ');if(effects!==lastEffects){document.querySelector('#effects')!.textContent=effects;lastEffects=effects;}requestAnimationFrame(frame);}

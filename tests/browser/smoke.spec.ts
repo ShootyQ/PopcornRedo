@@ -10,3 +10,17 @@ test('restores batch 30 and shows Launch only while ready to launch',async({page
  await page.evaluate(()=>localStorage.setItem('butter-pop-v1',JSON.stringify({version:1,muted:false,seen:true,runs:{relaxed:{level:29,lives:3},classic:{level:14,lives:2}}})));
  await page.reload();await expect(page.locator('#action')).toBeHidden();await page.getByRole('button',{name:'Continue batch 30'}).click();await expect(page.locator('#level-name')).toHaveText('THE GRAND FINALE');await expect(page.getByRole('button',{name:'Launch ↑',exact:true})).toBeVisible();await page.locator('#pause').click();await expect(page.locator('#action')).toBeHidden();await page.getByRole('button',{name:'Back to the bounce'}).click();await expect(page.locator('#action')).toBeHidden();await expect(page.locator('#action')).toBeVisible({timeout:5000});await page.locator('#action').click();await expect(page.locator('#action')).toBeHidden();
 });
+test('keeps the entire playfield centered through tablet play, edge drags, and rotation',async({browser})=>{
+ const context=await browser.newContext({viewport:{width:768,height:1024},hasTouch:true,isMobile:true});const page=await context.newPage();await page.goto('/');await page.getByRole('button',{name:'Let’s get popping'}).tap();
+ async function checkFrame(){const layout=await page.locator('canvas').evaluate(c=>{const r=c.getBoundingClientRect();return {left:r.left,right:r.right,center:(r.left+r.right)/2,width:innerWidth,scrollWidth:document.documentElement.scrollWidth,scrollX:window.scrollX};});expect(layout.left).toBeGreaterThanOrEqual(0);expect(layout.right).toBeLessThanOrEqual(layout.width);expect(Math.abs(layout.center-layout.width/2)).toBeLessThan(2);expect(layout.scrollWidth).toBeLessThanOrEqual(layout.width);expect(layout.scrollX).toBe(0);}
+ await checkFrame();const cdp=await context.newCDPSession(page);
+ for(const viewport of [{width:768,height:1024},{width:1024,height:768},{width:390,height:844},{width:844,height:390},{width:320,height:568}]){
+  await page.setViewportSize(viewport);await checkFrame();const box=(await page.locator('canvas').boundingBox())!;
+  for(const direction of [-1,1]){
+   await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:box.x+box.width/2,y:box.y+box.height*.8}]});
+   for(let step=1;step<=5;step++)await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:Math.max(1,Math.min(viewport.width-1,box.x+box.width/2+direction*box.width*step/6)),y:box.y+box.height*.8}]});
+   await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});await checkFrame();
+  }
+ }
+ await context.close();
+});
