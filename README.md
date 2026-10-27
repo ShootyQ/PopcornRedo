@@ -46,3 +46,13 @@ Every screen fits the viewport without document or menu scrolling. Start/Continu
 ## Local progress
 
 The browser stores separate Relaxed and Classic checkpoints and the last chosen mode, with a second local backup. The menu shows each mode's saved batch. Checkpoints update on level changes, lives, pause, and leaving the page; returning starts the saved batch from the beginning. Old saves are migrated and each mode is recovered independently if another record is invalid. If browser storage is unavailable, the menu and pause screen say so and the in-memory game remains playable. Local progress belongs to the same browser/profile and site; it does not sync between browsers or devices, and clearing website data removes it.
+
+## Controllers
+
+Pair a Nintendo Switch Pro Controller through the device's Bluetooth settings (hold the small Sync button on top until its lights cycle), or connect a supported controller over USB on a computer. Open the game and press a controller button so the browser can discover it. Look for **CONTROLLER CONNECTED** above the playfield.
+
+- Left stick or D-pad: move the paddle. In menus, directions change the focused button.
+- A or B: launch, fire, or activate a menu button. Hold either to keep firing lasers; releasing and pressing again is required to launch a held ball.
+- + / Start: pause or resume with the countdown.
+
+The game uses the browser's standard Gamepad mapping and accepts both bottom/right face buttons to accommodate Nintendo label differences. Unmapped controllers display a message instead of guessing their layout. Disconnecting pauses play; reconnecting never resumes or launches automatically. Touch, mouse, and keyboard continue to work. Browser and device support varies, especially for individual Joy-Cons. Browser audio/fullscreen restrictions can require one initial screen tap or mouse click. Physical controller behavior must still be checked on the target device.

@@ -1,3 +1,5 @@
+import {ControllerInput,stick} from '../src/controller';
+import type {ControllerPad} from '../src/controller';
 import {describe,it,expect,beforeEach,vi} from 'vitest';
 import {Game,PICKUP_DROP_CHANCE} from '../src/game';
 import {makeBricks,levels,BRICK_GRID} from '../src/levels';
@@ -115,4 +117,16 @@ describe('durable local saves',()=>{
   vi.stubGlobal('localStorage',{getItem:()=>null,setItem:()=>{throw new Error('Blocked');}});try{expect(writeSave(readSave())).toBe(false);}finally{vi.unstubAllGlobals();}
   vi.stubGlobal('localStorage',{getItem:()=>null,setItem:()=>{}});try{expect(writeSave(readSave())).toBe(false);}finally{vi.unstubAllGlobals();}
  });
+});
+
+// Gamepad state is independent of browser hardware so mappings and edge cases
+// can be checked without pretending a physical Switch controller is attached.
+
+describe('controller input',()=>{
+ const pad=(pressed:number[]=[],axes=[0,0],index=0,mapping='standard'):ControllerPad=>({index,mapping,connected:true,axes,buttons:Array.from({length:16},(_,i)=>({pressed:pressed.includes(i)}))});
+ it('filters drift and scales analogue movement',()=>{expect(stick(.17)).toBe(0);expect(stick(NaN)).toBe(0);expect(stick(1)).toBe(1);expect(stick(-1)).toBe(-1);expect(stick(.59)).toBeCloseTo(.5);});
+ it('prioritizes D-pad and accepts both Nintendo face button mappings',()=>{const input=new ControllerInput();input.poll([pad()],0);expect(input.poll([pad([14],[1,0])],20).move).toBe(-1);expect(input.poll([pad([1])],40).confirm).toBe(true);expect(input.poll([pad([1])],50).confirm).toBe(false);input.poll([pad()],60);expect(input.poll([pad([0])],70).confirm).toBe(true);});
+ it('ignores the discovery press and a held button after focus returns',()=>{const input=new ControllerInput();expect(input.poll([pad([1,9])],0).confirm).toBe(false);expect(input.poll([pad([1,9])],20).pause).toBe(false);input.poll([pad([1])],30,false);expect(input.poll([pad([1])],40).confirm).toBe(false);input.poll([pad()],50);expect(input.poll([pad([1])],60).confirm).toBe(true);});
+ it('edges Pause, repeats menu navigation at a controlled rate, and releases movement on disconnect',()=>{const input=new ControllerInput();input.poll([pad()],0);expect(input.poll([pad([9])],10).pause).toBe(true);expect(input.poll([pad([9])],20).pause).toBe(false);expect(input.poll([pad([13])],30).nav).toBe(1);expect(input.poll([pad([13])],40).nav).toBe(0);expect(input.poll([pad([13])],380).nav).toBe(1);const lost=input.poll([],400);expect(lost.lost).toBe(true);expect(lost.move).toBe(0);expect(input.poll([pad([1])],420).confirm).toBe(false);});
+ it('retains one active controller, handles sparse slots, and safely rejects unmapped devices',()=>{const input=new ControllerInput();input.poll([null,pad([], [0,0],1)],0);expect(input.poll([pad([1]),pad([],[-1,0],1)],10).move).toBe(-1);expect(input.poll([pad([], [0,0],0,'')],20).status).toBe('unmapped');expect(input.poll(null,30).status).toBe('unavailable');});
 });
