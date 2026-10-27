@@ -32,3 +32,22 @@ test('remembers level 3 completion before Next is tapped or the page reloads',as
  await page.getByRole('button',{name:'Classic',exact:false}).click();await page.getByRole('button',{name:'Continue batch 3'}).click();await expect(page.getByRole('heading',{name:/Batch 3.*complete!/})).toBeVisible();await expect(page.getByRole('button',{name:'Start batch 4'})).toBeVisible();await expect.poll(()=>page.evaluate(()=>JSON.parse(localStorage.getItem('butter-pop-v1')!).runs.classic)).toEqual({level:3,lives:2});
  await page.getByRole('button',{name:'Back to menu'}).click();await expect(page.getByRole('button',{name:'Continue batch 4'})).toBeVisible();await page.reload();await page.getByRole('button',{name:'Classic',exact:false}).click();await page.getByRole('button',{name:'Continue batch 4'}).click();await expect(page.locator('#level-name')).toHaveText('ON THE COB');await expect(page.locator('#action')).toBeVisible();
 });
+test('outside-the-box long presses do not select text or strand touch controls',async({browser})=>{
+ const context=await browser.newContext({viewport:{width:390,height:844},hasTouch:true,isMobile:true});const page=await context.newPage();await page.goto('/');await page.getByRole('button',{name:'Let’s get popping'}).tap();
+ const caption=page.locator('#level-name');await expect(caption).toHaveCSS('user-select','none');await expect(page.locator('#app')).toHaveCSS('touch-action','pinch-zoom');
+ const box=(await caption.boundingBox())!,cdp=await context.newCDPSession(page);
+ await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:box.x+box.width/2,y:box.y+box.height/2}]});await page.waitForTimeout(800);await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
+ expect(await page.evaluate(()=>getSelection()?.toString())).toBe('');
+ expect(await caption.evaluate(el=>!el.dispatchEvent(new Event('contextmenu',{bubbles:true,cancelable:true})))).toBe(true);
+ // Also recover from a selection left over before the new version loaded.
+ await caption.evaluate(el=>{const range=document.createRange();range.selectNodeContents(el);getSelection()?.addRange(range);});
+ const canvas=(await page.locator('canvas').boundingBox())!;
+ // Begin outside the left edge of the canvas, below the paddle.
+ await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:5,y:canvas.y+canvas.height*.88}]});
+ await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:100,y:canvas.y+canvas.height*.88}]});
+ await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
+ await expect.poll(()=>page.locator('canvas').evaluate(c=>{const ctx=c.getContext('2d')!,scale=c.width/376,row=ctx.getImageData(0,Math.round(575*scale),c.width,1).data;let sum=0,n=0;for(let x=0;x<c.width;x++){const i=x*4;if(row[i]>190&&row[i+1]<150&&row[i+2]<120){sum+=x/scale;n++;}}return n?sum/n:0;})).toBeGreaterThan(240);
+ expect(await page.evaluate(()=>getSelection()?.toString())).toBe('');
+ const frame=await page.locator('canvas').boundingBox();expect(frame!.x).toBeGreaterThanOrEqual(0);expect(frame!.x+frame!.width).toBeLessThanOrEqual(390);expect(await page.evaluate(()=>scrollX)).toBe(0);
+ await page.locator('#pause').click();await page.getByRole('button',{name:'Upgrade guide',exact:true}).click();await expect(page.getByRole('button',{name:'Got it'})).toBeVisible();await page.getByRole('button',{name:'Got it'}).click();await expect(page.getByRole('button',{name:'Back to the bounce'})).toBeVisible();await context.close();
+});

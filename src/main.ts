@@ -15,6 +15,7 @@ function home(){game.phase='home';ui();}
 function button(id:string,text:string,cls='big-button'){return `<button id="${id}" class="${cls}">${text}</button>`;}
 function ui(){
  app.classList.toggle('is-gameplay',game.phase!=='home');
+ app.classList.toggle('is-playing',game.phase==='playing'||game.phase==='countdown');
  mute.textContent=save.muted?'♪ OFF':'♪ ON';mute.setAttribute('aria-pressed',String(save.muted));
  pause.hidden=game.phase==='home';const canLaunch=game.balls.some(b=>b.held);action.hidden=game.phase!=='playing'||(!canLaunch&&!game.effects.laser);action.textContent=canLaunch?'Launch ↑':'Fire ✦';
  document.querySelector('#level-name')!.textContent=game.phase==='home'?'MADE FOR A LITTLE BREAK':game.title.toUpperCase();
@@ -32,12 +33,23 @@ function ui(){
 function guide(){overlay.hidden=false;overlay.innerHTML=`<div class="dialog guide"><div class="eyebrow">CATCH A LITTLE GOOD THING</div><h2>Pick-me-<em>ups.</em></h2><dl>${upgrades.map(u=>`<div><dt>${labels[u]}</dt><dd>${({wide:'A little more paddle.',sticky:'Catch the ball. Launch when ready.',multi:'Two more balls. Up to five!',slow:'A moment to catch your breath.',laser:'Tap Fire to clear a path.',strong:'Crunch tough bricks in one hit.',life:'One extra Classic life. Wide in Relaxed.'})[u]}</dd></div>`).join('')}</dl><p>Timed treats last 15 seconds.<br>Catch another to refresh. Lose a ball?<br>Effects reset when the last one drops.</p>${button('back','Got it →')}</div>`;document.querySelector('#back')!.addEventListener('click',ui);}
  game.onChange=ui;game.onBoundary=remember;game.onSound=high=>sound.play(save.muted,high);
  mute.onclick=()=>{sound.unlock();save.muted=!save.muted;writeSave(save);ui();};pause.onclick=()=>game.pause();action.onclick=()=>{sound.unlock();game.action();};
+// Treat the space below and beside the paddle as part of the controller.
+// Selection/callout prevention also covers the surrounding labels and margins.
+app.addEventListener('selectstart',event=>event.preventDefault());
+app.addEventListener('contextmenu',event=>event.preventDefault());
+app.addEventListener('dragstart',event=>event.preventDefault());
+app.addEventListener('pointerdown',()=>window.getSelection()?.removeAllRanges());
 let drag:{id:number;x:number;paddle:number}|null=null;
-canvas.addEventListener('pointerdown',e=>{if(game.phase!=='playing')return;const rect=canvas.getBoundingClientRect();if((e.clientY-rect.top)/rect.height*650<390)return;sound.unlock();drag={id:e.pointerId,x:e.clientX,paddle:game.paddle};canvas.setPointerCapture(e.pointerId);});
-canvas.addEventListener('pointermove',e=>{if(drag&&drag.id===e.pointerId&&game.phase==='playing')game.move(drag.paddle+(e.clientX-drag.x)*376/canvas.getBoundingClientRect().width);});
-for(const event of ['pointerup','pointercancel','lostpointercapture'])canvas.addEventListener(event,()=>{drag=null;});
+app.addEventListener('pointerdown',e=>{
+ if(game.phase!=='playing'||!e.isPrimary||e.button!==0||drag)return;
+ if((e.target as Element).closest('button,a,#overlay'))return;
+ const rect=canvas.getBoundingClientRect();if((e.clientY-rect.top)/rect.height*650<390)return;
+ e.preventDefault();sound.unlock();drag={id:e.pointerId,x:e.clientX,paddle:game.paddle};app.setPointerCapture(e.pointerId);
+});
+app.addEventListener('pointermove',e=>{if(drag&&drag.id===e.pointerId&&game.phase==='playing')game.move(drag.paddle+(e.clientX-drag.x)*376/canvas.getBoundingClientRect().width);});
+for(const event of ['pointerup','pointercancel','lostpointercapture'])app.addEventListener(event,()=>{drag=null;});
 // A rotation changes the mapping between screen pixels and game coordinates.
-function resetDrag(){if(drag&&canvas.hasPointerCapture(drag.id))canvas.releasePointerCapture(drag.id);drag=null;}
+function resetDrag(){if(drag&&app.hasPointerCapture(drag.id))app.releasePointerCapture(drag.id);drag=null;}
 window.addEventListener('resize',resetDrag);window.visualViewport?.addEventListener('resize',resetDrag);
 const keys=new Set<string>();window.addEventListener('keydown',e=>{if(e.target instanceof HTMLButtonElement)return;if(['ArrowLeft','ArrowRight','Space'].includes(e.code)){e.preventDefault();keys.add(e.code);if(e.code==='Space'&&!e.repeat){sound.unlock();game.action();}}if(e.code==='Escape')game.pause();});window.addEventListener('keyup',e=>keys.delete(e.code));window.addEventListener('blur',()=>{keys.clear();drag=null;game.pause();});document.addEventListener('visibilitychange',()=>{if(document.hidden){keys.clear();game.pause();}});
 const reduced=matchMedia('(prefers-reduced-motion: reduce)');let last=performance.now(),acc=0,lastEffects='';
