@@ -2,7 +2,7 @@ import {describe,it,expect,beforeEach,vi} from 'vitest';
 import {Game,PICKUP_DROP_CHANCE} from '../src/game';
 import {makeBricks,levels,BRICK_GRID} from '../src/levels';
 import {sweep,rebound} from '../src/physics';
-import {readSave,writeSave} from '../src/storage';
+import {readSave,writeSave,checkpointRun} from '../src/storage';
 describe('physics',()=>{
 it('sweeps through high speed brick paths',()=>{expect(sweep(50,100,0,-200,30,20,42,21)?.ny).toBe(1);expect(sweep(0,30,100,0,30,20,42,21)?.nx).toBe(-1);expect(sweep(0,0,0,10,30,20,42,21)).toBeNull();});
 it('handles corners and parallel travel',()=>{expect(sweep(0,0,100,100,30,30,20,20)).not.toBeNull();expect(sweep(0,0,0,100,30,30,20,20)).toBeNull();});
@@ -77,5 +77,26 @@ describe('expanded campaign and drop tuning',()=>{
  it('restores both old saves and new later levels',()=>{
   let raw='';vi.stubGlobal('localStorage',{getItem:()=>raw,setItem:(_k:string,v:string)=>{raw=v;}});
   try{const s=readSave();s.runs.classic={level:14,lives:2};s.runs.relaxed={level:29,lives:3};writeSave(s);expect(readSave().runs).toEqual(s.runs);s.runs.relaxed.level=30;writeSave(s);expect(readSave().runs.relaxed.level).toBe(0);}finally{vi.unstubAllGlobals();}
+ });
+});
+
+describe('completion checkpoints',()=>{
+ it.each(['relaxed','classic'] as const)('retains a cleared level 3 before Next is tapped in %s',mode=>{
+  let raw:string|null=null;vi.stubGlobal('localStorage',{getItem:()=>raw,setItem:(_key:string,value:string)=>{raw=value;}});
+  try{const saved=readSave(),g=new Game();g.start(mode,2,2);
+   g.onBoundary=()=>{saved.runs[mode]=checkpointRun(g.level,g.lives,g.phase);writeSave(saved);};
+   for(const b of g.bricks)if(b.kind!=='#')b.hp=0;g.update(.001);
+   expect(g.phase).toBe('clear');expect(g.level).toBe(2);expect(readSave().runs[mode]).toEqual({level:3,lives:2});
+   // Reloading and choosing Continue must start level 4.
+   const continued=new Game(),run=readSave().runs[mode];continued.start(mode,run.level,run.lives);expect(continued.title).toBe(levels[3].name);
+   // Taking Next also starts 4, and must not accidentally save 5.
+   g.next();expect(g.level).toBe(3);expect(readSave().runs[mode].level).toBe(3);
+  }finally{vi.unstubAllGlobals();}
+ });
+ it('only resets the campaign after the final level or game over',()=>{
+  expect(checkpointRun(28,2,'clear')).toEqual({level:29,lives:2});
+  expect(checkpointRun(29,2,'clear')).toEqual({level:0,lives:3});
+  expect(checkpointRun(29,2,'complete')).toEqual({level:0,lives:3});
+  expect(checkpointRun(2,0,'over')).toEqual({level:0,lives:3});
  });
 });

@@ -24,3 +24,11 @@ test('keeps the entire playfield centered through tablet play, edge drags, and r
  }
  await context.close();
 });
+test('remembers level 3 completion before Next is tapped or the page reloads',async({page})=>{
+ await page.goto('/');await page.evaluate(()=>localStorage.setItem('butter-pop-v1',JSON.stringify({version:1,muted:true,seen:true,runs:{relaxed:{level:2,lives:3},classic:{level:2,lives:2}}})));await page.reload();
+ // Fixture: enter the actual completion flow with no breakable bricks left.
+ // This changes only this browser session, with no production test hook.
+ await page.evaluate(async()=>{const path=performance.getEntriesByType('resource').map(entry=>entry.name).find(url=>new URL(url).pathname==='/src/game.ts')!;const {Game}=await import(path);const load=Game.prototype.load;Game.prototype.load=function(){load.call(this);for(const brick of this.bricks)if(brick.kind!=='#')brick.hp=0;};});
+ await page.getByRole('button',{name:'Classic',exact:false}).click();await page.getByRole('button',{name:'Continue batch 3'}).click();await expect(page.getByRole('heading',{name:/Batch 3.*complete!/})).toBeVisible();await expect(page.getByRole('button',{name:'Start batch 4'})).toBeVisible();await expect.poll(()=>page.evaluate(()=>JSON.parse(localStorage.getItem('butter-pop-v1')!).runs.classic)).toEqual({level:3,lives:2});
+ await page.getByRole('button',{name:'Back to menu'}).click();await expect(page.getByRole('button',{name:'Continue batch 4'})).toBeVisible();await page.reload();await page.getByRole('button',{name:'Classic',exact:false}).click();await page.getByRole('button',{name:'Continue batch 4'}).click();await expect(page.locator('#level-name')).toHaveText('ON THE COB');await expect(page.locator('#action')).toBeVisible();
+});
