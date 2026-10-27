@@ -20,7 +20,7 @@ it('Classic retains damage, Relaxed resets bricks and replaces life',()=>{g.bric
 it('ends a run and completes the campaign with boundary callbacks',()=>{const cb=vi.fn();g.onBoundary=cb;g.lives=1;g.balls=[];g.update(.001);expect(g.phase).toBe('over');expect(cb).toHaveBeenCalledOnce();g.start('relaxed',levels.length-1,3);g.bricks.forEach(b=>{if(b.kind!=='#')b.hp=0;});g.update(.001);expect(g.phase).toBe('clear');g.next();expect(g.phase).toBe('complete');});
 });
 describe('storage',()=>{
-it('handles invalid and blocked storage and restores separate runs',()=>{const map=new Map<string,string>();vi.stubGlobal('localStorage',{getItem:(k:string)=>map.get(k),setItem:(k:string,v:string)=>map.set(k,v)});const s=readSave();s.runs.classic={level:8,lives:2};s.muted=true;writeSave(s);expect(readSave()).toEqual(s);map.set('butter-pop-v1','bad');expect(readSave().runs.classic.level).toBe(0);vi.stubGlobal('localStorage',{getItem:()=>{throw Error();},setItem:()=>{throw Error();}});expect(()=>writeSave(readSave())).not.toThrow();vi.unstubAllGlobals();});
+it('handles invalid and blocked storage and restores separate runs',()=>{const map=new Map<string,string>();vi.stubGlobal('localStorage',{getItem:(k:string)=>map.get(k),setItem:(k:string,v:string)=>map.set(k,v)});const s=readSave();s.runs.classic={level:8,lives:2};s.muted=true;writeSave(s);expect(readSave()).toEqual(s);map.set('butter-pop-v1','bad');expect(readSave().runs.classic.level).toBe(8);vi.stubGlobal('localStorage',{getItem:()=>{throw Error();},setItem:()=>{throw Error();}});expect(()=>writeSave(readSave())).not.toThrow();vi.unstubAllGlobals();});
 });
 describe('full layouts',()=>{it('can clear every level with paddle movement and normal game rules',()=>{vi.spyOn(Math,'random').mockReturnValue(.5);try{for(let level=0;level<levels.length;level++){const g=new Game();g.start('relaxed',level,3);for(let step=0;step<120*600&&g.phase==='playing';step++){const ball=g.balls.find(b=>!b.held)||g.balls[0];g.move(ball.x+Math.sin(step/180)*24);if(g.balls.some(b=>b.held))g.action();g.update(1/120);}expect(g.phase,`level ${level+1} should be reachable`).toBe('clear');}}finally{vi.restoreAllMocks();}},15000);});
 
@@ -98,5 +98,21 @@ describe('completion checkpoints',()=>{
   expect(checkpointRun(29,2,'clear')).toEqual({level:0,lives:3});
   expect(checkpointRun(29,2,'complete')).toEqual({level:0,lives:3});
   expect(checkpointRun(2,0,'over')).toEqual({level:0,lives:3});
+ });
+});
+
+describe('durable local saves',()=>{
+ it('migrates old Classic progress and remembers the chosen mode',()=>{
+  const map=new Map<string,string>();vi.stubGlobal('localStorage',{getItem:(key:string)=>map.get(key),setItem:(key:string,value:string)=>map.set(key,value)});
+  try{map.set('butter-pop-v1',JSON.stringify({version:1,muted:true,seen:true,runs:{relaxed:{level:0,lives:3},classic:{level:5,lives:2}}}));
+   const save=readSave();expect(save.lastMode).toBe('classic');save.lastMode='relaxed';expect(writeSave(save)).toBe(true);expect(readSave().lastMode).toBe('relaxed');
+   // One damaged run must not erase the other mode or its settings.
+   const raw=JSON.parse(map.get('butter-pop-v1')!);raw.runs.relaxed={level:-1,lives:3};map.set('butter-pop-v1',JSON.stringify(raw));expect(readSave().runs.classic).toEqual({level:5,lives:2});expect(readSave().runs.relaxed).toEqual({level:0,lives:3});expect(readSave().muted).toBe(true);
+   map.set('butter-pop-v1','corrupt');expect(readSave().runs.classic.level).toBe(5);
+  }finally{vi.unstubAllGlobals();}
+ });
+ it('reports blocked or silently discarded writes instead of claiming success',()=>{
+  vi.stubGlobal('localStorage',{getItem:()=>null,setItem:()=>{throw new Error('Blocked');}});try{expect(writeSave(readSave())).toBe(false);}finally{vi.unstubAllGlobals();}
+  vi.stubGlobal('localStorage',{getItem:()=>null,setItem:()=>{}});try{expect(writeSave(readSave())).toBe(false);}finally{vi.unstubAllGlobals();}
  });
 });

@@ -5,5 +5,5 @@ export interface Brick { x:number; y:number; w:number; h:number; hp:number; kind
 export interface Ball { x:number; y:number; vx:number; vy:number; held:boolean; heldOffset?:number }
 export interface Pickup { x:number; y:number; type:Upgrade }
 export interface SavedRun { level:number; lives:number }
-export interface Save { version:1; muted:boolean; seen:boolean; runs:Record<Mode,SavedRun> }
+export interface Save { version:1; muted:boolean; seen:boolean; lastMode?:Mode; runs:Record<Mode,SavedRun> }
 export interface Level { name:string; rows:string[] }

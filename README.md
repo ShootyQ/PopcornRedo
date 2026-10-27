@@ -42,3 +42,7 @@ The game frame shows **Build N** on the menu and throughout play, including phon
 ## Screen and fullscreen behavior
 
 Every screen fits the viewport without document or menu scrolling. Start/Continue requests browser fullscreen directly from the player's tap. Unsupported or denied requests fall back to the same viewport-filling game. Pause offers Enter/Exit fullscreen where supported and a sound toggle. Leaving fullscreen through the browser pauses play; returning to the menu exits fullscreen. Browser fullscreen support varies on iPhone, so Safari may retain its browser bars. Menus scale to fit short landscape screens, and safe-area padding keeps controls away from notches.
+
+## Local progress
+
+The browser stores separate Relaxed and Classic checkpoints and the last chosen mode, with a second local backup. The menu shows each mode's saved batch. Checkpoints update on level changes, lives, pause, and leaving the page; returning starts the saved batch from the beginning. Old saves are migrated and each mode is recovered independently if another record is invalid. If browser storage is unavailable, the menu and pause screen say so and the in-memory game remains playable. Local progress belongs to the same browser/profile and site; it does not sync between browsers or devices, and clearing website data removes it.

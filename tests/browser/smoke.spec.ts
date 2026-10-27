@@ -62,8 +62,9 @@ test('Fire accepts paddle drags, clean taps, and touch cancellation',async({brow
  const context=await browser.newContext({viewport:{width:390,height:844},hasTouch:true,isMobile:true});const page=await context.newPage();await page.goto('/');
  await page.evaluate(async()=>{const path=performance.getEntriesByType('resource').map(entry=>entry.name).find(url=>new URL(url).pathname==='/src/game.ts')!;const {Game}=await import(path);const start=Game.prototype.start;Game.prototype.start=function(...args:unknown[]){start.apply(this,args);this.apply('laser');this.action();this.shots=[];this.cooldown=0;(window as any).testGame=this;(window as any).testActions=0;};const action=Game.prototype.action;Game.prototype.action=function(){if((window as any).testGame===this)(window as any).testActions++;action.call(this);};});
  await page.getByRole('button',{name:'Let’s get popping'}).tap();await expect(page.locator('#action')).toHaveText('Fire ✦');const box=(await page.locator('#action').boundingBox())!,x=box.x+box.width/2,y=box.y+box.height/2,cdp=await context.newCDPSession(page);
+ await page.evaluate(()=>document.addEventListener('touchstart',event=>{(window as any).testPrevented=event.defaultPrevented;}));
  async function touch(type:string,px=x){await cdp.send('Input.dispatchTouchEvent',{type,touchPoints:type==='touchEnd'||type==='touchCancel'?[]:[{x:px,y}]});}
- await touch('touchStart');await touch('touchMove',x+95);await touch('touchEnd');
+ await touch('touchStart');expect(await page.evaluate(()=>(window as any).testPrevented)).toBe(true);await touch('touchMove',x+95);await touch('touchEnd');
  await expect.poll(()=>page.evaluate(()=>(window as any).testGame.paddle)).toBeGreaterThan(260);expect(await page.evaluate(()=>(window as any).testActions)).toBe(0);
  // A fresh touch can immediately move left from the very same button.
  await touch('touchStart');await touch('touchMove',x-90);await touch('touchEnd');await expect.poll(()=>page.evaluate(()=>(window as any).testGame.paddle)).toBeLessThan(220);expect(await page.evaluate(()=>(window as any).testActions)).toBe(0);
@@ -88,4 +89,22 @@ test('fits all screens and menus without scrolling when fullscreen is unavailabl
 });
 test('a denied fullscreen request leaves the game usable',async({page})=>{
  await page.addInitScript(()=>{Element.prototype.requestFullscreen=()=>Promise.reject(new Error('Fullscreen denied'));});await page.goto('/');await page.getByRole('button',{name:'Let’s get popping'}).click();await expect(page.locator('#action')).toBeVisible();await page.locator('#action').click();await expect(page.locator('#action')).toBeHidden();await page.locator('#pause').click();await expect(page.getByRole('button',{name:'Back to the bounce'})).toBeVisible();
+});
+
+test('restores a level-six local save in the correct mode across new tabs',async({page,context})=>{
+ await page.goto('/');await page.evaluate(()=>{localStorage.clear();localStorage.setItem('butter-pop-v1',JSON.stringify({version:1,muted:true,seen:true,runs:{relaxed:{level:0,lives:3},classic:{level:5,lives:2}}}));});await page.reload();
+ await expect(page.getByRole('button',{name:'Continue batch 6'})).toBeVisible();await expect(page.locator('[data-mode="classic"]')).toHaveAttribute('aria-pressed','true');await expect(page.locator('#save-status')).toHaveText('Progress saves on this device.');
+ await page.getByRole('button',{name:'Continue batch 6'}).click();await page.locator('#pause').click();await page.evaluate(()=>window.dispatchEvent(new Event('pagehide')));
+ const returned=await context.newPage();await returned.goto('/');await expect(returned.getByRole('button',{name:'Continue batch 6'})).toBeVisible();await returned.getByRole('button',{name:'Continue batch 6'}).click();await expect(returned.locator('#level-name')).toHaveText('THE MARQUEE');await returned.close();
+});
+test('warns when local saving is blocked and keeps the game playable',async({page})=>{
+ await page.addInitScript(()=>{Storage.prototype.setItem=()=>{throw new Error('Storage blocked');};});await page.goto('/');await expect(page.locator('#save-status')).toHaveText('Saving unavailable — keep this tab open.');await page.getByRole('button',{name:'Let’s get popping'}).click();await expect(page.locator('#action')).toBeVisible();await page.locator('#pause').click();await expect(page.getByText('Saving unavailable — keep this tab open.')).toBeVisible();
+});
+test('local progress survives closing and reopening the browser',async({browser})=>{
+ const {mkdtemp,rm}=await import('node:fs/promises');const profile=await mkdtemp('/tmp/butter-local-save-');let context:Awaited<ReturnType<ReturnType<typeof browser.browserType>['launchPersistentContext']>>|undefined;
+ const options={executablePath:'/usr/bin/chromium',args:['--no-sandbox'],viewport:{width:390,height:844}};
+ try{
+  context=await browser.browserType().launchPersistentContext(profile,options);let page=await context.newPage();await page.goto('/');await page.evaluate(()=>localStorage.setItem('butter-pop-v1',JSON.stringify({version:1,lastMode:'classic',muted:true,seen:true,runs:{relaxed:{level:0,lives:3},classic:{level:5,lives:2}}})));await page.reload();await page.getByRole('button',{name:'Continue batch 6'}).click();await context.close();context=undefined;
+  context=await browser.browserType().launchPersistentContext(profile,options);page=await context.newPage();await page.goto('/');await expect(page.getByRole('button',{name:'Continue batch 6'})).toBeVisible();await expect(page.locator('[data-mode="classic"]')).toHaveAttribute('aria-pressed','true');
+ }finally{await context?.close();await rm(profile,{recursive:true,force:true});}
 });
