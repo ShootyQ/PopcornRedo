@@ -1,6 +1,6 @@
 import {describe,it,expect,beforeEach,vi} from 'vitest';
 import {Game} from '../src/game';
-import {makeBricks,levels} from '../src/levels';
+import {makeBricks,levels,BRICK_GRID} from '../src/levels';
 import {sweep,rebound} from '../src/physics';
 import {readSave,writeSave} from '../src/storage';
 describe('physics',()=>{
@@ -11,8 +11,8 @@ it('reflects walls and paddle',()=>{const g=new Game();g.start('classic',0,3);g.
 });
 describe('campaign and rules',()=>{
 let g:Game;beforeEach(()=>{g=new Game();g.start('classic',0,3);});
-it('contains 15 nonempty layouts with no sealed brick rows',()=>{expect(levels).toHaveLength(15);for(let i=0;i<15;i++){const bricks=makeBricks(i);expect(bricks.some(b=>b.kind!=='#')).toBe(true);expect(levels[i].rows.every(r=>r.length===7)).toBe(true);expect(bricks.filter(b=>b.kind==='#').length).toBeLessThan(4);}});
-it('tough takes two hits; obstacles never break; explosions chain',()=>{g.bricks=makeBricks(2);const b=g.bricks.find(b=>b.kind==='t')!;g.damage(b);expect(b.hp).toBe(1);g.damage(b);expect(b.hp).toBe(0);const wall={x:0,y:0,w:42,h:21,hp:Infinity,kind:'#',color:0};g.damage(wall);expect(wall.hp).toBe(Infinity);g.bricks=[{...wall,hp:1,kind:'e'},{...wall,x:48,hp:1,kind:'e'},{...wall,x:96,hp:1,kind:'s'}];g.damage(g.bricks[0]);expect(g.bricks.every(b=>b.hp===0)).toBe(true);});
+it('contains 15 nonempty layouts with no sealed brick rows',()=>{expect(levels).toHaveLength(15);for(let i=0;i<15;i++){const bricks=makeBricks(i);expect(bricks.some(b=>b.kind!=='#')).toBe(true);expect(levels[i].rows.every(r=>r.length===BRICK_GRID.columns)).toBe(true);expect(bricks.filter(b=>b.kind==='#').length).toBeLessThan(4);}});
+it('tough takes two hits; obstacles never break; explosions chain',()=>{g.bricks=makeBricks(2);const b=g.bricks.find(b=>b.kind==='t')!;g.damage(b);expect(b.hp).toBe(1);g.damage(b);expect(b.hp).toBe(0);const wall={x:0,y:0,w:42,h:21,hp:Infinity,kind:'#',color:0};g.damage(wall);expect(wall.hp).toBe(Infinity);g.bricks=[{...wall,hp:1,kind:'e'},{...wall,x:31,hp:1,kind:'e'},{...wall,x:62,hp:1,kind:'s'}];g.damage(g.bricks[0]);expect(g.bricks.every(b=>b.hp===0)).toBe(true);});
 it('power breaks tough bricks immediately',()=>{const b=makeBricks(2).find(b=>b.kind==='t')!;g.apply('strong');g.damage(b);expect(b.hp).toBe(0);});
 it('refreshes timers and freezes them during pause and countdown',()=>{g.apply('wide');g.update(1);expect(g.effects.wide).toBe(14);g.apply('wide');expect(g.effects.wide).toBe(15);g.pause();g.update(10);expect(g.effects.wide).toBe(15);g.resume();g.update(3);expect(g.effects.wide).toBe(15);g.update(15);expect(g.effects.wide).toBeUndefined();});
 it('counts last-ball loss only; caps multiball',()=>{g.action();g.apply('multi');g.apply('multi');g.apply('multi');expect(g.balls).toHaveLength(5);g.balls[0].y=700;g.update(.001);expect(g.lives).toBe(3);g.balls=[];g.update(.001);expect(g.lives).toBe(2);expect(g.balls[0].held).toBe(true);});
@@ -41,5 +41,25 @@ describe('sticky contact and launch',()=>{
  });
  it('keeps edge catches inside the arena when moving to a wall',()=>{
   const g=new Game();g.start('classic',0,3);g.apply('sticky');g.balls=[{x:g.paddle+42,y:550,vx:0,vy:290,held:false}];g.update(.08);g.move(1000);g.update(.01);expect(g.balls[0].x).toBeLessThanOrEqual(369);g.action();expect(g.balls[0].vx).toBeGreaterThan(0);
+ });
+});
+
+describe('dense arcade fields',()=>{
+ it('starts with 88 bricks and keeps every field dense with top and side access',()=>{
+  expect(makeBricks(0)).toHaveLength(88);
+  for(let i=0;i<15;i++){
+   const bricks=makeBricks(i);expect(bricks.filter(b=>b.kind!=='#').length).toBeGreaterThanOrEqual(65);
+   expect(Math.min(...bricks.map(b=>b.y))-52).toBeGreaterThanOrEqual(60);
+   expect(Math.min(...bricks.map(b=>b.x))).toBeGreaterThan(12);
+   expect(Math.max(...bricks.map(b=>b.x+b.w))).toBeLessThan(376-12);
+   expect(Math.max(...bricks.map(b=>b.y+b.h))).toBeLessThan(360);
+  }
+ });
+ it('lets a ball above the field ricochet off the ceiling and pop multiple bricks',()=>{
+  const random=vi.spyOn(Math,'random').mockReturnValue(.5);
+  try{const g=new Game();g.start('classic',0,3);g.balls=[{x:80,y:85,vx:270,vy:100,held:false}];let roofBounce=false;
+   for(let i=0;i<480;i++){const b=g.balls[0];const vy=b.vy;g.update(1/120);if(vy<0&&b.vy>0&&b.y<65)roofBounce=true;}
+   expect(roofBounce).toBe(true);expect(g.bricks.filter(b=>b.hp===0).length).toBeGreaterThanOrEqual(3);
+  }finally{random.mockRestore();}
  });
 });
