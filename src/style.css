@@ -15,3 +15,5 @@ canvas{user-select:none;-webkit-user-select:none}
    Intentional pinch zoom remains available outside the canvas. Menus can still scroll. */
 #app.is-playing{touch-action:pinch-zoom;overscroll-behavior:none}
 .control-strip #build-label{flex:0 0 auto;font:10px monospace;letter-spacing:0;color:#78684d;white-space:nowrap}
+/* Fire is also a drag surface; a finger starting here must not pan the browser. */
+#action{touch-action:none}

@@ -11,7 +11,7 @@ npm ci --cache /workspace/.npm-cache
 npm run dev
 ```
 
-Drag in the lower playfield, or use arrow keys. Tap Launch / Fire, or press Space. Escape pauses. Relaxed offers endless level retries; Classic has three lives. Progress saves separately as soon as the last breakable brick is cleared, before you tap to start the next batch. Returning to the menu or reloading restarts the saved level, not an in-flight ball.
+Drag in the lower playfield, or use arrow keys. Tap Launch / Fire, or press Space. You can also drag directly on Fire to move the paddle; dragging does not shoot. Escape pauses. Relaxed offers endless level retries; Classic has three lives. Progress saves separately as soon as the last breakable brick is cleared, before you tap to start the next batch. Returning to the menu or reloading restarts the saved level, not an in-flight ball.
 
 ## Verify
 

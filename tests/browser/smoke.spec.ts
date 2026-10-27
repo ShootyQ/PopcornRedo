@@ -58,3 +58,17 @@ test('build number stays visible on menu, during play, and while paused on phone
   await page.locator('#pause').click();await expect(label).toHaveText('Build DEV');await expect(label).toBeVisible();
  }
 });
+test('Fire accepts paddle drags, clean taps, and touch cancellation',async({browser})=>{
+ const context=await browser.newContext({viewport:{width:390,height:844},hasTouch:true,isMobile:true});const page=await context.newPage();await page.goto('/');
+ await page.evaluate(async()=>{const path=performance.getEntriesByType('resource').map(entry=>entry.name).find(url=>new URL(url).pathname==='/src/game.ts')!;const {Game}=await import(path);const start=Game.prototype.start;Game.prototype.start=function(...args:unknown[]){start.apply(this,args);this.apply('laser');this.action();this.shots=[];this.cooldown=0;(window as any).testGame=this;(window as any).testActions=0;};const action=Game.prototype.action;Game.prototype.action=function(){if((window as any).testGame===this)(window as any).testActions++;action.call(this);};});
+ await page.getByRole('button',{name:'Let’s get popping'}).tap();await expect(page.locator('#action')).toHaveText('Fire ✦');const box=(await page.locator('#action').boundingBox())!,x=box.x+box.width/2,y=box.y+box.height/2,cdp=await context.newCDPSession(page);
+ async function touch(type:string,px=x){await cdp.send('Input.dispatchTouchEvent',{type,touchPoints:type==='touchEnd'||type==='touchCancel'?[]:[{x:px,y}]});}
+ await touch('touchStart');await touch('touchMove',x+95);await touch('touchEnd');
+ await expect.poll(()=>page.evaluate(()=>(window as any).testGame.paddle)).toBeGreaterThan(260);expect(await page.evaluate(()=>(window as any).testActions)).toBe(0);
+ // A fresh touch can immediately move left from the very same button.
+ await touch('touchStart');await touch('touchMove',x-90);await touch('touchEnd');await expect.poll(()=>page.evaluate(()=>(window as any).testGame.paddle)).toBeLessThan(220);expect(await page.evaluate(()=>(window as any).testActions)).toBe(0);
+ await touch('touchStart');await touch('touchEnd');await expect.poll(()=>page.evaluate(()=>(window as any).testActions)).toBe(1);expect(await page.evaluate(()=>(window as any).testGame.shots.length)).toBe(2);
+ await page.locator('#action').click();expect(await page.evaluate(()=>(window as any).testActions)).toBe(2);
+ await touch('touchStart');await touch('touchMove',x+25);await touch('touchCancel');await touch('touchStart');await touch('touchMove',x+90);await touch('touchEnd');await expect.poll(()=>page.evaluate(()=>(window as any).testGame.paddle)).toBeGreaterThan(260);
+ await page.locator('#action').focus();await page.keyboard.press('Space');expect(await page.evaluate(()=>(window as any).testActions)).toBe(3);await context.close();
+});
