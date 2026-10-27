@@ -34,3 +34,7 @@ Upload `dist/` after `npm run build` to a static host. Vite uses relative asset 
 ## GitHub Pages
 
 Pushes to `main` run the rule tests, build, and deploy through `.github/workflows/pages.yml`. The intended project URL is https://shootyq.github.io/PopcornRedo/; the account's main site is preserved. If automatic Pages enablement is unavailable, choose **GitHub Actions** under repository Settings → Pages, then rerun the deployment workflow.
+
+## Build number
+
+The game frame shows **Build N** on the menu and throughout play, including phone landscape. N is the GitHub Actions workflow run number, embedded at build time so it identifies the version actually loaded. Reruns show an attempt suffix (for example, Build 12.2). Local development displays Build DEV; local production builds display Build LOCAL. Match player reports to the numbered deployment in Actions.

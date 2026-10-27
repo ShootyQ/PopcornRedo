@@ -51,3 +51,10 @@ test('outside-the-box long presses do not select text or strand touch controls',
  const frame=await page.locator('canvas').boundingBox();expect(frame!.x).toBeGreaterThanOrEqual(0);expect(frame!.x+frame!.width).toBeLessThanOrEqual(390);expect(await page.evaluate(()=>scrollX)).toBe(0);
  await page.locator('#pause').click();await page.getByRole('button',{name:'Upgrade guide',exact:true}).click();await expect(page.getByRole('button',{name:'Got it'})).toBeVisible();await page.getByRole('button',{name:'Got it'}).click();await expect(page.getByRole('button',{name:'Back to the bounce'})).toBeVisible();await context.close();
 });
+test('build number stays visible on menu, during play, and while paused on phones',async({page})=>{
+ for(const viewport of [{width:390,height:844},{width:844,height:390},{width:320,height:568}]){
+  await page.setViewportSize(viewport);await page.goto('/');const label=page.getByLabel('Game build');await expect(label).toHaveText('Build DEV');await expect(label).toBeVisible();
+  await page.getByRole('button',{name:'Let’s get popping'}).click();await expect(label).toBeVisible();const bounds=(await label.boundingBox())!;expect(bounds.x).toBeGreaterThanOrEqual(0);expect(bounds.x+bounds.width).toBeLessThanOrEqual(viewport.width);
+  await page.locator('#pause').click();await expect(label).toHaveText('Build DEV');await expect(label).toBeVisible();
+ }
+});

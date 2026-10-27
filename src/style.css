@@ -14,3 +14,4 @@ canvas{user-select:none;-webkit-user-select:none}
 /* A single finger outside the canvas controls the game instead of panning the page.
    Intentional pinch zoom remains available outside the canvas. Menus can still scroll. */
 #app.is-playing{touch-action:pinch-zoom;overscroll-behavior:none}
+.control-strip #build-label{flex:0 0 auto;font:10px monospace;letter-spacing:0;color:#78684d;white-space:nowrap}
