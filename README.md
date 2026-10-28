@@ -1,6 +1,6 @@
 # Butter Pop
 
-An original, popcorn-inspired brick breaker for phones, tablets, and desktop browsers. Built with TypeScript, Canvas, and Vite. No runtime services, external fonts, or accounts. Includes 30 handcrafted levels with dense roof runs, split towers, staircases, courtyards, islands, and explosive chains; ordinary upgrade drops have a 15% chance per brick destroyed directly by the ball, with separate guaranteed Classic extra-life opportunities. The on-field Launch control appears only for a held ball, with Fire available during the laser upgrade.
+An original, popcorn-inspired brick breaker for phones, tablets, and desktop browsers. Built with TypeScript, Canvas, and Vite. No runtime services, external fonts, or accounts. Includes 30 handcrafted levels with dense roof runs, split towers, staircases, courtyards, islands, and explosive chains; ordinary upgrade drops have a 16.5% chance per brick destroyed directly by the ball, with separate guaranteed Classic extra-life opportunities. The on-field Launch control appears only for a held ball, with Fire available during the laser upgrade.
 
 ## Develop
 
@@ -59,16 +59,18 @@ The game uses the browser's standard Gamepad mapping and accepts both bottom/rig
 
 ## Auto-fire lasers
 
-Open **Options** on the menu or while paused to toggle **Auto-fire lasers**. It defaults off, saves locally, and fires at the normal four-volley-per-second rate while the laser upgrade is active and a ball is in flight. It stops on pause, upgrade expiry, or loss of all balls, and never launches a held ball. Manual and controller firing share the same cooldown.
+Open **Options** on the menu or while paused to toggle **Auto-fire lasers**. It defaults off, saves locally, and fires at the normal rate of one paired volley every 350 milliseconds while the laser upgrade is active and a ball is in flight. It stops on pause, upgrade expiry, or loss of all balls, and never launches a held ball. Manual and controller firing share the same cooldown.
 
 ## Safety Net, Butter Bomb, and extra lives
 
-- **Safety Net:** at most one offer per campaign in each mode. Catch it to arm a green mesh at the bottom. It bounces one missed ball back into play without costing a life, then disappears. An armed net carries across levels and browser restarts; an offered or spent net cannot drop again. New campaigns reset the allowance.
+- **Safety Net:** 1–2 offers per level. Catch it to arm a green mesh at the bottom; each charge saves one missed ball. Store up to two charges, including across levels and reloads. A used net can be replaced by another pickup.
 - **Butter Bomb:** half the random-drop weight of a common upgrade. Catching it loads the next paddle hit with an explosive ball. Its next breakable-brick impact clears a small 3×3 cluster, including tough bricks, and can trigger explosive chains. Indestructible bricks stay intact. The golden paddle and ball ring show the loaded charge. Bombs have no timer; unused charges reset with a lost last ball or a new level.
-- **Classic extra lives:** each level gets one +1-life drop, with a 25% chance of a second. They appear around 35% and 70% of bricks destroyed; no random-pool life drops can exceed the allowance. Missed pickups count as issued. The quota and issued count persist on reload, so reopening a level cannot reroll or farm them. Relaxed mode keeps unlimited retries and has no extra-life drops.
+- **Classic extra lives:** each level gets one +1-life drop, with a 27.5% chance of a second. They appear around 35% and 70% of bricks destroyed; no random-pool life drops can exceed the allowance. Missed pickups count as issued. The quota and issued count persist on reload, so reopening a level cannot reroll or farm them. Relaxed mode keeps unlimited retries and has no extra-life drops.
 
 ## Drop balance
 
-Ordinary upgrades have an 8% roll on direct ball kills, with at least two seconds of active play between drops. Laser pickups have one quarter the weight of common upgrades and cannot spawn while a laser is already falling or active. Laser kills, Butter Bomb blasts, and explosive-brick splash do not roll ordinary drops, preventing weapon refills from creating pickup floods. The promised Classic life-drop allowance still applies to all destruction sources; the campaign safety-net limit is unchanged.
+Ordinary upgrades have a 16.5% roll on direct ball kills, with at least two seconds of active play between drops. Laser kills, Butter Bomb blasts, and explosive-brick splash do not roll ordinary upgrades. Lasers, nets and Classic lives have separate per-level budgets awarded from any destruction source; issued opportunities persist across reloads.
 
 Numbered masonry takes 4–6 hits (occasionally 8); POWER deals two damage per hit. Joined steel rows, gates and staggered barriers create routes while retaining outer lanes. Wide paddle expiry waits for the next paddle bounce while balls are in flight. Pickups collect whenever their visible capsule overlaps the paddle. Ball speed is 5% faster than the original tuning. Existing version-1 saves remain compatible across deployments on the same browser and URL.
+
+Laser and net drops use saved per-level budgets: 2–3 lasers and 1–2 nets, awarded at brick-clear milestones even for weapon kills. Missing a pickup still uses that opportunity. Nets can rearm after use and store up to two rescues, carrying across levels. Lasers fire paired shots every 350 ms (previously 250 ms). Ordinary random drops are 10% more likely (15% → 16.5%); the chance of a second Classic life also rises 10% (25% → 27.5%).

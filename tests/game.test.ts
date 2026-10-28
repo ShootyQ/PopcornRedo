@@ -76,10 +76,10 @@ describe('expanded campaign and drop tuning',()=>{
   const g=new Game();g.start('classic',14,2);g.phase='clear';g.next();expect(g.level).toBe(15);expect(g.phase).toBe('playing');expect(g.lives).toBe(2);
   g.start('classic',29,2);g.phase='clear';g.next();expect(g.phase).toBe('complete');
  });
- it('keeps ordinary drop chance at fifteen percent',()=>{
-  expect(PICKUP_DROP_CHANCE).toBeCloseTo(.15);
+ it('keeps ordinary drop chance at sixteen and a half percent',()=>{
+  expect(PICKUP_DROP_CHANCE).toBeCloseTo(.165);
   const random=vi.spyOn(Math,'random');
-  try{for(const [value,count] of [[.1499,1],[.15,0],[.2,0]]){random.mockReturnValue(value);const g=new Game();g.start('classic',0,3);g.damage(g.bricks[0]);expect(g.pickups).toHaveLength(count);}}finally{random.mockRestore();}
+  try{for(const [value,count] of [[.1649,1],[.165,0],[.2,0]]){random.mockReturnValue(value);const g=new Game();g.start('classic',0,3);g.damage(g.bricks[0]);expect(g.pickups).toHaveLength(count);}}finally{random.mockRestore();}
  });
  it('restores both old saves and new later levels',()=>{
   let raw='';vi.stubGlobal('localStorage',{getItem:()=>raw,setItem:(_k:string,v:string)=>{raw=v;}});
@@ -138,7 +138,7 @@ describe('controller input',()=>{
 
 describe('optional laser autofire',()=>{
  const setup=()=>{const g=new Game();g.start('classic',0,3);g.apply('laser');g.action();g.shots=[];g.cooldown=0;return g;};
- it('defaults off and shares the manual firing cooldown',()=>{const g=setup();g.update(.01);expect(g.shots).toHaveLength(0);g.autoFireLasers=true;g.update(.01);expect(g.shots).toHaveLength(2);g.action();expect(g.shots).toHaveLength(2);g.update(.1);expect(g.shots).toHaveLength(2);g.update(.15);expect(g.shots).toHaveLength(4);});
+ it('defaults off and shares the manual firing cooldown',()=>{const g=setup();g.update(.01);expect(g.shots).toHaveLength(0);g.autoFireLasers=true;g.update(.01);expect(g.shots).toHaveLength(2);g.action();expect(g.shots).toHaveLength(2);g.update(.1);expect(g.shots).toHaveLength(2);g.update(.26);expect(g.shots).toHaveLength(4);});
  it('stops on pause, countdown, expiry, disabling, and loss of all balls',()=>{
   const g=setup();g.autoFireLasers=true;g.pause();g.update(1);expect(g.shots).toHaveLength(0);g.resume();g.update(3);expect(g.shots).toHaveLength(0);g.autoFireLasers=false;g.update(.01);expect(g.shots).toHaveLength(0);g.autoFireLasers=true;g.effects.laser=.001;g.update(.01);expect(g.shots).toHaveLength(0);g.apply('laser');g.balls=[];g.update(.01);expect(g.shots).toHaveLength(0);expect(g.effects.laser).toBeUndefined();
  });
@@ -146,18 +146,18 @@ describe('optional laser autofire',()=>{
  it('persists the preference and defaults legacy saves to off',()=>{const map=new Map<string,string>();vi.stubGlobal('localStorage',{getItem:(k:string)=>map.get(k),setItem:(k:string,v:string)=>map.set(k,v)});try{const s=readSave();expect(s.autoFireLasers).toBe(false);s.autoFireLasers=true;writeSave(s);expect(readSave().autoFireLasers).toBe(true);map.clear();map.set('butter-pop-v1',JSON.stringify({version:1,runs:s.runs}));expect(readSave().autoFireLasers).toBe(false);}finally{vi.unstubAllGlobals();}});
 });
 
-describe('single campaign safety net',()=>{
+describe('replenishable safety nets',()=>{
  it('catches one ball without costing a life, then disappears',()=>{
   const g=new Game();g.start('classic',0,3);g.apply('net');g.balls=[{x:45,y:NET_Y-12,vx:0,vy:290,held:false}];g.update(.04);
   expect(g.safetyNet).toBe('spent');expect(g.balls[0].vy).toBeLessThan(0);expect(g.lives).toBe(3);expect(g.netFlash).toBeGreaterThan(0);
-  g.apply('net');expect(g.safetyNet).toBe('spent');g.balls=[{x:45,y:NET_Y-12,vx:0,vy:290,held:false}];g.update(.15);expect(g.lives).toBe(2);expect(g.balls[0].held).toBe(true);
+  expect(g.netCharges).toBe(0);g.balls=[{x:45,y:NET_Y-12,vx:0,vy:290,held:false}];g.update(.15);expect(g.lives).toBe(2);expect(g.balls[0].held).toBe(true);
  });
  it('only rescues the first missed multiball and freezes while paused',()=>{
   const g=new Game();g.start('classic',0,3);g.apply('net');g.balls=[40,80].map(x=>({x,y:NET_Y-12,vx:0,vy:290,held:false}));g.pause();g.update(10);expect(g.safetyNet).toBe('armed');g.resume();g.update(3);g.update(.15);expect(g.safetyNet).toBe('spent');expect(g.balls).toHaveLength(1);expect(g.lives).toBe(3);
  });
- it('never offers another net even if the first was missed, and only resets on a new campaign',()=>{
-  const g=new Game();g.start('relaxed',0,3);const random=vi.spyOn(Math,'random').mockReturnValue(.99);
-  try{random.mockReturnValueOnce(0).mockReturnValueOnce(.99);g.dropFrom(g.bricks[0]);expect(g.pickups.some(p=>p.type==='net')).toBe(true);expect(g.safetyNet).toBe('offered');g.pickups=[];for(const b of g.bricks)g.damage(b,true);expect(g.pickups.some(p=>p.type==='net')).toBe(false);g.phase='clear';g.next();expect(g.safetyNet).toBe('offered');g.start('relaxed',0,3);expect(g.safetyNet).toBe('unused');}finally{random.mockRestore();}
+ it('rearms a spent net and stores at most two rescue charges',()=>{
+  const g=new Game();g.start('classic',0,3);g.safetyNet='spent';g.apply('net');expect(g.safetyNet).toBe('armed');g.apply('net');g.apply('net');expect(g.netCharges).toBe(2);
+  g.balls=[40,80].map(x=>({x,y:NET_Y-12,vx:0,vy:290,held:false}));g.update(.04);expect(g.balls.every(b=>b.vy<0)).toBe(true);expect(g.netCharges).toBe(0);expect(g.safetyNet).toBe('spent');
  });
  it('keeps an armed net across levels and loses no charge while waiting for launch',()=>{const g=new Game();g.start('relaxed',0,3);g.apply('net');g.phase='clear';g.next();g.update(1);expect(g.safetyNet).toBe('armed');expect(g.balls[0].held).toBe(true);});
 });
@@ -171,12 +171,12 @@ describe('Butter Bomb',()=>{
  });
  it('works with sticky and multiball without arming every ball',()=>{const g=new Game();g.start('classic',0,3);g.apply('sticky');g.apply('bomb');g.balls=[170,205].map(x=>({x,y:550,vx:0,vy:290,held:false}));g.update(.08);expect(g.balls.filter(b=>b.bomb)).toHaveLength(1);expect(g.balls.every(b=>b.held)).toBe(true);g.action();expect(g.balls.filter(b=>b.bomb)).toHaveLength(1);g.balls=[];g.update(.001);expect(g.bombReady).toBe(false);expect(g.balls.some(b=>b.bomb)).toBe(false);});
  it('weights bomb drops at half a common upgrade and removes lives from the random pool',()=>{
-  const counts=new Map<string,number>();for(let i=0;i<13500;i++){const type=chooseUpgrade(i/13500,true);counts.set(type,(counts.get(type)??0)+1);}expect(counts.get('bomb')).toBe(1000);expect(counts.get('wide')).toBe(2000);expect(counts.has('life')).toBe(false);for(let i=0;i<1000;i++)expect(chooseUpgrade(i/1000,false)).not.toBe('net');
+  const counts=new Map<string,number>();for(let i=0;i<11000;i++){const type=chooseUpgrade(i/11000);counts.set(type,(counts.get(type)??0)+1);}expect(counts.get('bomb')).toBe(1000);expect(counts.get('wide')).toBe(2000);expect(counts.has('life')).toBe(false);for(let i=0;i<1000;i++)expect(chooseUpgrade(i/1000)).not.toBe('net');
  });
 });
 describe('bounded Classic life drops and persistent powerups',()=>{
  it.each([.24,.25,.9])('provides the fixed per-level life budget for random seed %s',roll=>{
-  const random=vi.spyOn(Math,'random').mockReturnValue(roll);try{const g=new Game();g.start('classic',0,3);const quota=roll<.25?2:1;expect(g.lifeQuota).toBe(quota);for(const b of g.bricks)g.damage(b,true);expect(g.pickups.filter(p=>p.type==='life')).toHaveLength(quota);expect(g.lifeIssued).toBe(quota);for(const b of g.bricks)g.damage(b,true);expect(g.lifeIssued).toBe(quota);}finally{random.mockRestore();}
+  const random=vi.spyOn(Math,'random').mockReturnValue(roll);try{const g=new Game();g.start('classic',0,3);const quota=roll<.275?2:1;expect(g.lifeQuota).toBe(quota);for(const b of g.bricks)g.damage(b,true);expect(g.pickups.filter(p=>p.type==='life')).toHaveLength(quota);expect(g.lifeIssued).toBe(quota);for(const b of g.bricks)g.damage(b,true);expect(g.lifeIssued).toBe(quota);}finally{random.mockRestore();}
  });
  it('drops no extra-life pickups in Relaxed',()=>{const g=new Game();g.start('relaxed',0,3);for(const b of g.bricks)g.damage(b,true);expect(g.pickups.some(p=>p.type==='life')).toBe(false);});
  it('saves spent nets and issued life budgets so reloads cannot farm them',()=>{
@@ -191,7 +191,7 @@ describe('bounded Classic life drops and persistent powerups',()=>{
 });
 
 describe('powerup balance and weapon feedback loops',()=>{
- it('makes laser weight one quarter of a common pickup and excludes it when unavailable',()=>{const counts=new Map<string,number>();for(let i=0;i<13500;i++){const type=chooseUpgrade(i/13500,true);counts.set(type,(counts.get(type)??0)+1);}expect(counts.get('laser')).toBe(500);expect(counts.get('wide')).toBe(2000);for(let i=0;i<1000;i++)expect(chooseUpgrade(i/1000,true,false)).not.toBe('laser');});
+ it('keeps lasers, nets, and lives out of ordinary random rolls',()=>{for(let i=0;i<11000;i++)expect(['laser','net','life']).not.toContain(chooseUpgrade(i/11000));});
  it('spaces ordinary drops by active play time and never refreshes an active or falling laser',()=>{
   const g=new Game();g.start('relaxed',0,3);const random=vi.spyOn(Math,'random').mockReturnValue(0);try{g.dropFrom(g.bricks[0]);expect(g.pickups).toHaveLength(1);g.dropFrom(g.bricks[1]);expect(g.pickups).toHaveLength(1);expect(g.dropCooldown).toBe(PICKUP_DROP_GAP);g.pause();g.update(10);expect(g.dropCooldown).toBe(PICKUP_DROP_GAP);g.resume();g.update(3);g.update(2);g.dropFrom(g.bricks[1]);expect(g.pickups).toHaveLength(2);
    for(const active of [true,false]){g.dropCooldown=0;g.pickups=active?[]:[{x:20,y:100,type:'laser'}];g.effects=active?{laser:15}:{};random.mockReturnValueOnce(0).mockReturnValueOnce(.78);g.dropFrom(g.bricks[2]);expect(g.pickups.filter(p=>p.type==='laser')).toHaveLength(active?0:1);}
@@ -202,7 +202,7 @@ describe('powerup balance and weapon feedback loops',()=>{
    g.bricks[0].kind='e';g.damage(g.bricks[0]);expect(g.pickups).toHaveLength(1);
   }finally{random.mockRestore();}
  });
- it('still issues the promised life budget when every brick is destroyed by weapons',()=>{const g=new Game();g.start('classic',0,3);g.lifeQuota=2;for(const brick of g.bricks)g.damage(brick,true,false);expect(g.pickups.map(p=>p.type)).toEqual(['life','life']);});
+ it('still issues the promised life budget when every brick is destroyed by weapons',()=>{const g=new Game();g.start('classic',0,3);g.lifeQuota=2;for(const brick of g.bricks)g.damage(brick,true,false);expect(g.pickups.filter(p=>p.type==='life')).toHaveLength(2);expect(g.pickups.filter(p=>p.type==='laser')).toHaveLength(g.laserQuota);expect(g.pickups.filter(p=>p.type==='net')).toHaveLength(g.netQuota);});
 });
 
 describe('paddle fairness and barrier masonry',()=>{
@@ -243,5 +243,29 @@ describe('layout update save compatibility',()=>{
    const save=readSave();expect(save.runs.classic.level).toBe(23);expect(save.runs.classic.lives).toBe(5);expect(save.runs.classic.lifeDrops?.issued).toBe(1);expect(save.runs.classic.lifeDrops?.destroyed).toBe(makeBricks(23).filter(b=>b.kind!=='#').length);
    writeSave(save);expect(readSave()).toEqual(save);
   }finally{vi.unstubAllGlobals();}
+ });
+});
+
+describe('per-level laser and net opportunities',()=>{
+ it.each(['relaxed','classic'] as const)('offers exactly the level budget in %s, including weapon kills',mode=>{
+  for(const roll of [.1,.9]){const random=vi.spyOn(Math,'random').mockReturnValue(roll);try{
+   for(let level=0;level<levels.length;level++){const g=new Game();g.start(mode,level,3);for(const brick of g.bricks)g.damage(brick,true,false);
+    expect(g.pickups.filter(p=>p.type==='laser')).toHaveLength(roll<.5?3:2);expect(g.pickups.filter(p=>p.type==='net')).toHaveLength(roll<.5?2:1);
+    g.bricks=makeBricks(level);for(const brick of g.bricks)g.damage(brick,true,false);expect(g.pickups.filter(p=>p.type==='laser')).toHaveLength(g.laserQuota);expect(g.pickups.filter(p=>p.type==='net')).toHaveLength(g.netQuota);
+   }
+  }finally{random.mockRestore();}}
+ });
+ it('restores budgets and two net charges, resets budgets at the next level, and migrates legacy nets',()=>{
+  const map=new Map<string,string>();vi.stubGlobal('localStorage',{getItem:(k:string)=>map.get(k),setItem:(k:string,v:string)=>map.set(k,v)});
+  try{const g=new Game();g.start('relaxed',0,3);g.apply('net');g.apply('net');g.laserQuota=3;g.netQuota=2;for(const brick of g.bricks.slice(0,40))g.damage(brick,true,false);
+   const progress={safetyNet:g.safetyNet,netCharges:g.netCharges,specialDrops:{level:0,laserQuota:g.laserQuota,laserIssued:g.laserIssued,netQuota:g.netQuota,netIssued:g.netIssued,destroyed:g.bricksDestroyed}};
+   const save=readSave();save.runs.relaxed=checkpointRun(0,3,'playing',progress);writeSave(save);const run=readSave().runs.relaxed;const restored=new Game();restored.start('relaxed',0,3,run);expect(restored.netCharges).toBe(2);expect(restored.laserIssued).toBe(g.laserIssued);
+   for(const brick of restored.bricks)restored.damage(brick,true,false);expect(restored.pickups.filter(p=>p.type==='laser')).toHaveLength(3-g.laserIssued);expect(restored.pickups.filter(p=>p.type==='net')).toHaveLength(2-g.netIssued);
+   const next=checkpointRun(0,3,'clear',progress);expect(next.specialDrops).toBeUndefined();expect(next.netCharges).toBe(2);restored.phase='clear';restored.next();expect(restored.laserIssued).toBe(0);expect(restored.netIssued).toBe(0);
+   restored.start('classic',5,3,{level:5,lives:3,safetyNet:'armed'});expect(restored.netCharges).toBe(1);
+  }finally{vi.unstubAllGlobals();}
+ });
+ it('paces every laser firing source at 350 milliseconds',()=>{
+  const g=new Game();g.start('classic',0,3);g.apply('laser');g.action();g.fireLasers();expect(g.shots).toHaveLength(2);g.update(.3);g.fireLasers();expect(g.shots).toHaveLength(2);g.update(.051);g.fireLasers();expect(g.shots).toHaveLength(4);
  });
 });

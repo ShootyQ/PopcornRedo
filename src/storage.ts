@@ -7,6 +7,9 @@ function validRun(run:any):run is SavedRun{return !!run&&Number.isInteger(run.le
 function progressOf(run:SavedRun):RunProgress {
  const progress:RunProgress={};
  if(['offered','armed','spent'].includes(run.safetyNet??''))progress.safetyNet=run.safetyNet;
+ if(run.safetyNet==='armed'&&Number.isInteger(run.netCharges)&&run.netCharges!>=1&&run.netCharges!<=2)progress.netCharges=run.netCharges;
+ const special=run.specialDrops;
+ if(special&&special.level===run.level&&[2,3].includes(special.laserQuota)&&[1,2].includes(special.netQuota)&&Number.isInteger(special.laserIssued)&&special.laserIssued>=0&&special.laserIssued<=special.laserQuota&&Number.isInteger(special.netIssued)&&special.netIssued>=0&&special.netIssued<=special.netQuota&&Number.isInteger(special.destroyed)&&special.destroyed>=0)progress.specialDrops={...special,destroyed:Math.min(special.destroyed,makeBricks(run.level).filter(b=>b.kind!=='#').length)};
  const drop=run.lifeDrops;
  if(drop&&drop.level===run.level&&(drop.quota===1||drop.quota===2)&&Number.isInteger(drop.issued)&&drop.issued>=0&&drop.issued<=drop.quota&&Number.isInteger(drop.destroyed)&&drop.destroyed>=0)progress.lifeDrops={...drop,destroyed:Math.min(drop.destroyed,makeBricks(run.level).filter(b=>b.kind!=='#').length)};
  return progress;
@@ -29,6 +32,8 @@ export function checkpointRun(level:number,lives:number,phase:Phase,progress?:Ru
  if(phase==='over'||phase==='complete'||(phase==='clear'&&level===levels.length-1))return {level:0,lives:3};
  const run:SavedRun={level:phase==='clear'?level+1:level,lives};
  if(progress?.safetyNet&&progress.safetyNet!=='unused')run.safetyNet=progress.safetyNet;
+ if(progress?.safetyNet==='armed'&&progress.netCharges)run.netCharges=progress.netCharges;
+ if(phase!=='clear'&&progress?.specialDrops)run.specialDrops={...progress.specialDrops};
  if(phase!=='clear'&&progress?.lifeDrops)run.lifeDrops={...progress.lifeDrops};
  return run;
 }

@@ -139,7 +139,7 @@ test('net mesh, bomb effects, and per-run limits survive returning to the game',
  await page.reload();await instrument();await page.getByRole('button',{name:'Let’s get popping'}).click();expect(await page.evaluate(()=>(window as any).powerGame.safetyNet)).toBe('spent');
  await page.evaluate(()=>{const g=(window as any).powerGame;g.apply('net');g.apply('bomb');g.balls=[{x:188,y:550,vx:0,vy:290,held:false}];});await expect.poll(()=>page.evaluate(()=>(window as any).powerGame.balls[0]?.bomb)).toBe(true);await expect(page.locator('#effects')).toContainText('BOMB IN PLAY');
  await page.evaluate(()=>{const g=(window as any).powerGame,b=g.balls[0],target=g.bricks.find((brick:any)=>brick.x===174&&brick.y===186);b.x=target.x+target.w/2;b.y=target.y+target.h+9;b.vx=0;b.vy=-290;});await expect.poll(()=>page.evaluate(()=>(window as any).powerGame.bricks.filter((b:any)=>b.hp===0).length)).toBeGreaterThanOrEqual(9);
- await page.locator('#pause').click();await page.getByRole('button',{name:'Upgrade guide',exact:true}).click();await expect(page.getByText('One offer per campaign. Catch it for one save.')).toBeInViewport();await expect(page.getByText('Next paddle hit loads a small brick-clearing blast.')).toBeInViewport();await expect(page.getByRole('button',{name:'Got it'})).toBeInViewport();
+ await page.locator('#pause').click();await page.getByRole('button',{name:'Upgrade guide',exact:true}).click();await expect(page.getByText('1–2 drops per batch. Store up to two saves.')).toBeInViewport();await expect(page.getByText('Next paddle hit loads a small brick-clearing blast.')).toBeInViewport();await expect(page.getByRole('button',{name:'Got it'})).toBeInViewport();
 });
 test('reload preserves the Classic life-drop allowance instead of rerolling it',async({page})=>{
  await page.goto('/');
@@ -148,4 +148,16 @@ test('reload preserves the Classic life-drop allowance instead of rerolling it',
  expect(await page.evaluate(()=>JSON.parse(localStorage.getItem('butter-pop-v1')!).runs.classic.lifeDrops)).toMatchObject({quota:1,issued:1,destroyed:40});
  await page.reload();await capture();await page.getByRole('button',{name:'Let’s get popping'}).click();expect(await page.evaluate(()=>(window as any).lifeGame.lifeQuota)).toBe(1);expect(await page.evaluate(()=>(window as any).lifeGame.lifeIssued)).toBe(1);
  const lives=await page.evaluate(()=>{const g=(window as any).lifeGame;for(const brick of g.bricks.slice(0,40))g.damage(brick,true);return g.pickups.filter((p:any)=>p.type==='life').length;});expect(lives).toBe(0);
+});
+
+test('laser and net budgets and two rescue charges survive reload',async({page})=>{
+ await page.goto('/');
+ async function instrument(){await page.evaluate(async()=>{const path=performance.getEntriesByType('resource').map(e=>e.name).find(url=>new URL(url).pathname==='/src/game.ts')!;const {Game}=await import(path);const start=Game.prototype.start;Game.prototype.start=function(...args:unknown[]){start.apply(this,args);(window as any).budgetGame=this;};});}
+ await instrument();await page.getByRole('button',{name:'Let’s get popping'}).click();
+ const budget=await page.evaluate(()=>{const g=(window as any).budgetGame;g.laserQuota=3;g.netQuota=2;for(const b of g.bricks.slice(0,40))g.damage(b,true,false);g.apply('net');g.apply('net');return {laser:g.laserIssued,net:g.netIssued};});
+ await expect(page.locator('#effects')).toContainText('NET READY ×2');
+ await page.reload();await instrument();await page.getByRole('button',{name:'Let’s get popping'}).click();
+ expect(await page.evaluate(()=>{const g=(window as any).budgetGame;return {laser:g.laserIssued,net:g.netIssued,charges:g.netCharges};})).toEqual({...budget,charges:2});
+ await page.evaluate(()=>{const g=(window as any).budgetGame;for(const b of g.bricks.slice(0,20))g.damage(b,true,false);});
+ expect(await page.evaluate(()=>{const g=(window as any).budgetGame;return {laser:g.laserIssued,net:g.netIssued};})).toEqual({laser:3,net:2});
 });
