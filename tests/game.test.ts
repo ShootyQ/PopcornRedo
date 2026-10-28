@@ -47,15 +47,20 @@ describe('sticky contact and launch',()=>{
 });
 
 describe('dense arcade fields',()=>{
- it('starts with 88 bricks and keeps every field dense with top and side access',()=>{
+ it('starts with 88 bricks and keeps substantial brick fields with top and side access',()=>{
   expect(makeBricks(0)).toHaveLength(88);
   for(let i=0;i<levels.length;i++){
-   const bricks=makeBricks(i);expect(bricks.filter(b=>b.kind!=='#').length).toBeGreaterThanOrEqual(65);
+   const bricks=makeBricks(i);expect(bricks.filter(b=>b.kind!=='#').length).toBeGreaterThanOrEqual(48);
    expect(Math.min(...bricks.map(b=>b.y))-52).toBeGreaterThanOrEqual(60);
    expect(Math.min(...bricks.map(b=>b.x))).toBeGreaterThan(12);
    expect(Math.max(...bricks.map(b=>b.x+b.w))).toBeLessThan(376-12);
    expect(Math.max(...bricks.map(b=>b.y+b.h))).toBeLessThan(360);
   }
+ });
+ it('gives every level a distinct silhouette with intentional internal routes',()=>{
+  const silhouettes=levels.map(level=>level.rows.map(row=>row.replace(/[ste#]/g,'X')).join('\n'));
+  expect(new Set(silhouettes).size).toBe(30);
+  expect(levels.slice(1).every(level=>level.rows.some(row=>row.includes('.')))).toBe(true);
  });
  it('lets a ball above the field ricochet off the ceiling and pop multiple bricks',()=>{
   const random=vi.spyOn(Math,'random').mockReturnValue(.5);
@@ -162,7 +167,7 @@ describe('Butter Bomb',()=>{
   const target=g.bricks.find(b=>b.x===174&&b.y===186)!;ball.x=target.x+target.w/2;ball.y=target.y+target.h+9;ball.vx=0;ball.vy=-290;g.update(.03);expect(ball.bomb).toBe(false);expect(g.bricks.filter(b=>b.hp===0)).toHaveLength(9);expect(g.blasts).toHaveLength(1);
  });
  it('breaks tough neighbors, preserves obstacles, and does not affect distant bricks',()=>{
-  const g=new Game();g.start('classic',2,3);const center=g.bricks.find(b=>b.x===174&&b.y===120)!;const near=g.bricks.find(b=>b.x===143&&b.y===120)!;near.kind='#';near.hp=Infinity;const far=g.bricks.find(b=>b.x===19)!;g.explode(center);expect(center.hp).toBe(0);expect(near.hp).toBe(Infinity);expect(far.hp).toBe(1);
+  const g=new Game();g.start('classic',0,3);const center=g.bricks.find(b=>b.x===174&&b.y===120)!;center.kind='t';center.hp=2;const near=g.bricks.find(b=>b.x===143&&b.y===120)!;near.kind='#';near.hp=Infinity;const far=g.bricks.find(b=>b.x===19)!;g.explode(center);expect(center.hp).toBe(0);expect(near.hp).toBe(Infinity);expect(far.hp).toBe(1);
  });
  it('works with sticky and multiball without arming every ball',()=>{const g=new Game();g.start('classic',0,3);g.apply('sticky');g.apply('bomb');g.balls=[170,205].map(x=>({x,y:550,vx:0,vy:290,held:false}));g.update(.08);expect(g.balls.filter(b=>b.bomb)).toHaveLength(1);expect(g.balls.every(b=>b.held)).toBe(true);g.action();expect(g.balls.filter(b=>b.bomb)).toHaveLength(1);g.balls=[];g.update(.001);expect(g.bombReady).toBe(false);expect(g.balls.some(b=>b.bomb)).toBe(false);});
  it('weights bomb drops at half a common upgrade and removes lives from the random pool',()=>{

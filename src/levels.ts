@@ -1,97 +1,67 @@
 import type {Brick,Level} from './types';
-// Dense fields leave side lanes and a roomy chamber above the bricks:
-// break through, then let the ball work its way across the roof.
+// Handcrafted silhouettes alternate dense roof runs with tunnels, islands and courtyards.
+// Every field keeps the outer side lanes and top chamber open.
 export const levels:Level[] = [
 {name:'Fresh batch',rows:[
- 'sssssssssss','sssssssssss','sssssssssss','sssssssssss',
- 'sssssssssss','sssssssssss','sssssssssss','sssssssssss']},
+ 'sssssssssss','sssssssssss','sssssssssss','sssssssssss','sssssssssss','sssssssssss','sssssssssss','sssssssssss']},
 {name:'Butterfly',rows:[
- 'ssss...ssss','sssss.sssss','sssssssssss','sssssssssss',
- 'sssssssssss','sssssssssss','sssss.sssss','ssss...ssss','sss.....sss']},
-{name:'Extra crunchy',rows:[
- 'ssstttttsss','sssssssssss','sssssssssss','stsssssssts',
- 'sssssssssss','sssststssss','sssssssssss','sssssssssss','ss.sssss.ss']},
-{name:'On the cob',rows:[
- '.sssssssss.','.stsstssts.','.sssssssss.','.sstsstsst.',
- '.sssssssss.','.stsstssts.','.sssssssss.','.sssssssss.','..sssssss..']},
+ 'ssss...ssss','sssss.sssss','sssssssssss','sssssssssss','sss..s..sss','ss...s...ss','sss..s..sss','ssss.s.ssss','sssss.sssss','ssss...ssss']},
+{name:'Stairway to butter',rows:[
+ 'ss.........','ssss.......','sstsss.....','sssstsss...','sssssstsss.','sssssssstss','..sssssssss','....sstssss','......sstss','........sss']},
+{name:'Twin silos',rows:[
+ '.sss...sss.','.sts...sts.','.sss...sss.','.sss...sss.','.sts...sts.','.sss...sss.','.sss...sss.','.sss...sss.','sssss.sssss','sssss.sssss']},
 {name:'Pop reaction',rows:[
- 'sssssssssss','ssesesssess','sssssssssss','sssssssssss',
- 'sesssessses','sssssssssss','sssssssssss','sssesssesss','sssssssssss']},
+ 'sss.....sss','ses.....ses','sssss.sssss','..ses.ses..','..sssssss..','....ses....','..sssssss..','..ses.ses..','sssss.sssss','ses.....ses']},
 {name:'The marquee',rows:[
- 'tststststst','sssssssssss','ss.......ss','ss.sssss.ss',
- 'ss.ssess.ss','ss.sssss.ss','ss.......ss','sssssssssss','tststststst']},
-{name:'Little detour',rows:[
- 'sssssssssss','sssssssssss','ssttsssttss','sssssssssss',
- 'ss..###..ss','ssss...ssss','sssssssssss','sssesssesss','sssssssssss']},
-{name:'Sweet & salty',rows:[
- 'sstsstsstss','stsstsstsst','sssssssssss','sssesesesss',
- 'sstsstsstss','sssssssssss','stsstsstsst','sssssssssss','sss.sss.sss']},
-{name:'Chain reaction',rows:[
- 'ssesesseses','sssssssssss','setstststes','sssssssssss',
- 'esesesesese','sssssssssss','setstststes','sssssssssss','ssesesseses']},
+ 'tststststst','sssssssssss','ss.......ss','ss.sssss.ss','ss.sssss.ss','ss.sssss.ss','ss.......ss','sssssssssss','tststststst']},
+{name:'Bowling alley',rows:[
+ 'sssssssssss','sssssssssss','sssss.sssss','sstss.sstss','ssss...ssss','sss..#..sss','ssss...ssss','sstss.sstss','sssss.sssss','sss.....sss']},
+{name:'Butter waves',rows:[
+ 'sss....ssss','sssst..ssss','ssssst..sss','.ssssst..ss','..ssssst..s','s..ssssst..','ss..ssssst.','sss..ssssst','ssss..sssss','sssss..ssss']},
+{name:'Domino pop',rows:[
+ 'ssesesssess','sssssssssss','...........','sesssessses','sssssssssss','...........','ssesesssess','sssssssssss','...........','sesssessses']},
 {name:'Balcony seats',rows:[
- 'stttsssttts','sssssssssss','sssssssssss','sss.sss.sss',
- 'ss#sssss#ss','sss.sss.sss','sssssssssss','sssesesesss','sssssssssss']},
+ 'stttsssttts','sssssssssss','sssssssssss','...........','ss..sss..ss','ss..sss..ss','ss#.....#ss','ss..sss..ss','sssssssssss','sss.....sss']},
 {name:'Zig & zag',rows:[
- 'sssss.ttttt','ssssss.tttt','tssssss.ttt','ttssssss.tt',
- 'tttssess.tt','tt.ttssssss','ttt.ttsssss','tttt.ttssss','ttttt.sssss']},
-{name:'Double feature',rows:[
- 'tttse.esttt','sssss.sssss','sssss.sssss','ssses.sesss',
- 'ss#ss.ss#ss','ssses.sesss','sssss.sssss','sssss.sssss','tttse.esttt']},
-{name:'Golden hour',rows:[
- '..ttttttt..','.tssssssst.','tssssssssst','tssesesssst',
- 'tsessssesst','tsssssessst','tssssssssst','.tssssssst.','..ttttttt..']},
-{name:'Almost famous',rows:[
- 'ttesttstett','sssssssssss','sstsstsstss','sssssssssss',
- 'sss#sss#sss','sssssssssss','tsesssssest','sssssssssss','stststststs','sssssssssss']},
+ 'ssss...tttt','sssss...ttt','tsssss...tt','ttsssss...t','tttsssss...','...sssssttt','t...ssssstt','tt...ssssst','ttt...sssss','tttt...ssss']},
+{name:'Space invader',rows:[
+ '..t.....t..','...t...t...','..sssssss..','.ssesssess.','sssssssssss','ss.sssss.ss','ss.s...s.ss','...ss.ss...','..sss.sss..','.sss...sss.']},
+{name:'Golden ring',rows:[
+ '..ttttttt..','.tssssssst.','tssssssssst','tss.....sst','tss.....sst','tss.....sst','tssssssssst','.tssssssst.','..ttttttt..']},
+{name:'Split decision',rows:[
+ 'tttt...tttt','ssss...ssss','sses...sess','ssss...ssss','sss..#..sss','sss.....sss','sssss.sssss','sses...sess','ssss...ssss','tttt...tttt']},
 {name:'The big pop',rows:[
- 'tttetttettt','tsssstsssst','esesesesese','sssssssssss',
- 'ss#sssss#ss','stststststs','sssesesesss','sssssssssss','tststststst','sssssssssss']},
-{name:'Encore',rows:[
- 'sssssssssss','stststststs','sssssssssss','sssesesesss','sssssssssss',
- 'stststststs','sssssssssss','sssesesesss','sssssssssss','stststststs']},
-{name:'Caramel ribbons',rows:[
- 'ttsssssssss','sttssssssss','ssttsssssss','sssttssssss','ssssttsssss',
- 'sssssttssss','ssssssttsss','sssssssttss','sssssssstts','ssssssssstt']},
-{name:'Popcorn plaza',rows:[
- 'ttttttttttt','sssssssssss','ss.sssss.ss','ss.seses.ss','ss.sssss.ss',
- 'ss.sssss.ss','ss.seses.ss','ss.sssss.ss','sssssssssss','ttttttttttt']},
+ '..tttettt..','.tssssssst.','esesesesese','sssssssssss','ss#sssss#ss','sssssssssss','.seseseses.','..sssssss..','...ststs...','....sss....']},
+{name:'Popcorn bucket',rows:[
+ '.sssssssss.','sssesssesss','sssssssssss','.ttttttttt.','.tssssssst.','.tsstsstst.','..tssssst..','..tsstsst..','...tssst...','...ttttt...']},
+{name:'Caramel switchback',rows:[
+ 'ttsssssssss','sttssssssss','.......ssss','sssssssstss','sssssssttss','ssss.......','ssttsssssss','sssttssssss','.......ssss','ssssssssstt']},
+{name:'Courtyard',rows:[
+ 'ttttttttttt','sssssssssss','ss.......ss','ss..sss..ss','ss..ses..ss','ss..sss..ss','ss.......ss','ssss...ssss','ssss...ssss','tttt...tttt']},
 {name:'Pinball picnic',rows:[
- 'sssssssssss','tststststst','sssssssssss','ss#sssss#ss','sssssssssss',
- 'sssesesesss','sssssssssss','stststststs','sssssssssss','sssss.sssss']},
-{name:'Firecracker',rows:[
- 'tststststst','seseseseses','sssssssssss','stesesesets','sssssssssss',
- 'esesesesese','sssssssssss','stesesesets','sssssssssss','tststststst']},
-{name:'Diamond dozen',rows:[
- 'sssstttssss','ssstssstsss','sstssssstss','stsssesssts','tssssssssst',
- 'tsssesessst','stsssssssts','sstssssstss','ssstssstsss','sssstttssss']},
-{name:'Intermission',rows:[
- 'sssssssssss','sssssssssss','sssesesesss','sssssssssss','tttsssssttt',
- 'sss..#..sss','sssssssssss','sssesesesss','sssssssssss','sssssssssss']},
+ 'sss..t..sss','sts..s..sts','sss..s..sss','..#..s..#..','sssssssssss','sssesesesss','...........','sstss.stsst','sssss.sssss','sss.....sss']},
+{name:'Firecracker fuse',rows:[
+ 'sssesesssss','sssssesssss','.....e.....','sssesesssss','sssesssssss','...e.......','sssesesssss','sssssesssss','.....e.....','sssesesssss']},
+{name:'Diamond mine',rows:[
+ '....ttt....','...tssst...','..tssssst..','.tsssessst.','tssssssssst','tsssesessst','.tssssssst.','..tssssst..','...tssst...','....ttt....']},
+{name:'Snack break',rows:[
+ 'ssss...ssss','stss...ssts','sses...sess','ssss...ssss','...........','..sssssss..','..stststs..','..ssessss..','..sssssss..','..ttttttt..']},
 {name:'Butter braids',rows:[
- 'ststssststs','sststststss','ssstststsss','sssststssss','ssssstsssss',
- 'sssststssss','ssstststsss','sststststss','ststssststs','tstssssstst']},
-{name:'Crackle tower',rows:[
- 'tttssessstt','stsssesssts','sssssesssss','sssssesssss','ss#ssess#ss',
- 'sssssesssss','stsssesssts','sssssesssss','tttssessstt','sssssesssss']},
-{name:'Moonlight matinee',rows:[
- 'ssstttttsss','sstssssstss','stsssssssts','tssssssssst','tsss...ssst',
- 'tsssesessst','tssssssssst','stsssssssts','sstssssstss','ssstttttsss']},
-{name:'Salt & sparkle',rows:[
- 'tststststst','seseseseses','stststststs','esesesesese','tststststst',
- 'ss#sssss#ss','stststststs','seseseseses','sssssssssss','tststststst']},
+ 'stts...stts','sstts.sttss','.ssttsstss.','..sstttss..','...sstss...','..sstttss..','.ssttsstss.','sstts.sttss','stts...stts','tts.....stt']},
+{name:'Crackle castle',rows:[
+ 'ttt..t..ttt','sss..s..sss','sssssssssss','sssssesssss','ss#.....#ss','sss.....sss','sssesesesss','sssssssssss','tttt...tttt','ssss...ssss']},
+{name:'Crescent crunch',rows:[
+ '...tttttt..','..tssssssst','.tsssssssss','tssssss....','tsssss.....','tssses.....','tssssss....','.tsssssssss','..tssssssst','...tttttt..']},
+{name:'Salt islands',rows:[
+ 'tst.....tst','ses.....ses','tst..s..tst','....ses....','sss.sss.sss','sts..#..sts','sss.sss.sss','....ses....','tst..s..tst','ses.....ses']},
 {name:'The royal box',rows:[
- 'ttttttttttt','tssssssssst','tsstttttsst','tsssesessst','tss.....sst',
- 'tss..#..sst','tsssesessst','tsstttttsst','tssssssssst','ttttttttttt']},
+ 'ttttttttttt','tssssssssst','tsstttttsst','tss.....sst','tss..e..sst','tss.....sst','tsst...tsst','tsss...ssst','tsss...ssst','tttt...tttt']},
 {name:'Confetti cannon',rows:[
- 'sssssssssss','setstststes','ssesesssess','sssssssssss','stststststs',
- 'seseseseses','sssssssssss','ttesttstett','ssesesssess','sssssssssss']},
+ 'sss.....sss','ses.....ses','ssss...ssss','ststs.ststs','.seseseses.','..sssssss..','...ttett...','..sssssss..','.seseseses.','ssss...ssss']},
 {name:'Standing ovation',rows:[
- 'ttstttttstt','ssstssstsss','ssstssstsss','seseseseses','sssssssssss',
- 'ss#sssss#ss','ttstttttstt','ssstssstsss','seseseseses','sssssssssss']},
+ 't.t.t.t.t.t','sssssssssss','ssstssstsss','seseseseses','...........','ss#sssss#ss','sssssssssss','seseseseses','ssstssstsss','ttt.....ttt']},
 {name:'The grand finale',rows:[
- 'ttetttttett','stststststs','esesesesese','ttssssssstt','sss#sss#sss',
- 'sssesesesss','tststststst','sssssssssss','setstststes','sssssssssss']}
+ 'ttetttttett','sssss.sssss','eses...sese','ttss...sstt','sss#...#sss','sssesesesss','tststststst','ss.......ss','setstststes','ssss...ssss']}
 ];
 export const BRICK_GRID={columns:11,x:19,y:120,pitchX:31,pitchY:22,width:27,height:16};
 export function makeBricks(index:number):Brick[] {
