@@ -8,7 +8,7 @@ function progressOf(run:SavedRun):RunProgress {
  const progress:RunProgress={};
  if(['offered','armed','spent'].includes(run.safetyNet??''))progress.safetyNet=run.safetyNet;
  const drop=run.lifeDrops;
- if(drop&&drop.level===run.level&&(drop.quota===1||drop.quota===2)&&Number.isInteger(drop.issued)&&drop.issued>=0&&drop.issued<=drop.quota&&Number.isInteger(drop.destroyed)&&drop.destroyed>=0&&drop.destroyed<=makeBricks(run.level).filter(b=>b.kind!=='#').length)progress.lifeDrops={...drop};
+ if(drop&&drop.level===run.level&&(drop.quota===1||drop.quota===2)&&Number.isInteger(drop.issued)&&drop.issued>=0&&drop.issued<=drop.quota&&Number.isInteger(drop.destroyed)&&drop.destroyed>=0)progress.lifeDrops={...drop,destroyed:Math.min(drop.destroyed,makeBricks(run.level).filter(b=>b.kind!=='#').length)};
  return progress;
 }
 export function readSave():Save {

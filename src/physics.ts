@@ -1,6 +1,6 @@
 export interface Hit {t:number; nx:number; ny:number}
 // Sweep a circle against an expanded rectangle, using the slab intersection method.
-export function sweep(x:number,y:number,dx:number,dy:number,rx:number,ry:number,rw:number,rh:number,r=6):Hit|null {
+export function sweep(x:number,y:number,dx:number,dy:number,rx:number,ry:number,rw:number,rh:number,r=7):Hit|null {
  const minX=rx-r,maxX=rx+rw+r,minY=ry-r,maxY=ry+rh+r;
  let near=-Infinity,far=Infinity,nx=0,ny=0;
  for(const [p,d,min,max,axis] of [[x,dx,minX,maxX,0],[y,dy,minY,maxY,1]]) {

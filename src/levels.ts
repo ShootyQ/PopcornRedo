@@ -63,8 +63,31 @@ export const levels:Level[] = [
 {name:'The grand finale',rows:[
  'ttetttttett','sssss.sssss','eses...sese','ttss...sstt','sss#...#sss','sssesesesss','tststststst','ss.......ss','setstststes','ssss...ssss']}
 ];
+// Steel gates and numbered masonry turn later silhouettes into routes to explore.
+const barriers:Record<number,Record<number,string>>={
+ 6:{4:'####...####',7:'ss44...44ss'},
+ 9:{3:'##...######',6:'ss44sss44ss'},
+ 10:{4:'4444...4444'},
+ 13:{3:'######...##',6:'44sss44ssss'},
+ 14:{4:'###.....###',7:'ss55555ssss'},
+ 16:{2:'####...####',5:'...ssssssss',8:'######...##'},
+ 17:{4:'ss44sss44ss',7:'####...####'},
+ 18:{3:'##...######',6:'######...##'},
+ 19:{2:'4444e444444',5:'####...####',8:'555e5555555'},
+ 20:{4:'44444e44444'},
+ 21:{4:'#####.#####',8:'ss55sss55ss'},
+ 22:{3:'####...####',6:'...######..'},
+ 23:{4:'####...####',7:'ss666e666ss'},
+ 24:{3:'66666......',6:'######...##'},
+ 25:{3:'##...######',6:'######...##'},
+ 26:{4:'ss66.e.66ss',7:'####...####'},
+ 27:{3:'4444...4444',6:'##...######',8:'ss666e666ss'},
+ 28:{4:'###########',7:'##...######',9:'666.....666'},
+ 29:{2:'666e...e666',4:'####...####',7:'##...######',9:'88ss.e.ss88'}
+};
+for(const [index,rows] of Object.entries(barriers))for(const [row,layout] of Object.entries(rows))levels[Number(index)].rows[Number(row)]=layout;
 export const BRICK_GRID={columns:11,x:19,y:120,pitchX:31,pitchY:22,width:27,height:16};
 export function makeBricks(index:number):Brick[] {
  const grid=BRICK_GRID;
- return levels[index].rows.flatMap((row,r)=>[...row].flatMap((kind,c)=>kind==='.'?[]:[{x:grid.x+c*grid.pitchX,y:grid.y+r*grid.pitchY,w:grid.width,h:grid.height,hp:kind==='t'?2:kind==='#'?Infinity:1,kind,color:(r+index)%4}]));
+ return levels[index].rows.flatMap((row,r)=>[...row].flatMap((kind,c)=>kind==='.'?[]:[{x:grid.x+c*grid.pitchX,y:grid.y+r*grid.pitchY,w:kind==='#'?grid.pitchX:grid.width,h:grid.height,hp:kind==='t'?2:kind==='#'?Infinity:/[4-8]/.test(kind)?Number(kind):1,kind,color:(r+index)%4}]));
 }

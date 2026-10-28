@@ -1,6 +1,6 @@
 # Butter Pop
 
-An original, popcorn-inspired brick breaker for phones, tablets, and desktop browsers. Built with TypeScript, Canvas, and Vite. No runtime services, external fonts, or accounts. Includes 30 handcrafted levels with dense roof runs, split towers, staircases, courtyards, islands, and explosive chains; ordinary upgrade drops have a 8% chance per brick destroyed directly by the ball, with separate guaranteed Classic extra-life opportunities. The on-field Launch control appears only for a held ball, with Fire available during the laser upgrade.
+An original, popcorn-inspired brick breaker for phones, tablets, and desktop browsers. Built with TypeScript, Canvas, and Vite. No runtime services, external fonts, or accounts. Includes 30 handcrafted levels with dense roof runs, split towers, staircases, courtyards, islands, and explosive chains; ordinary upgrade drops have a 15% chance per brick destroyed directly by the ball, with separate guaranteed Classic extra-life opportunities. The on-field Launch control appears only for a held ball, with Fire available during the laser upgrade.
 
 ## Develop
 
@@ -70,3 +70,5 @@ Open **Options** on the menu or while paused to toggle **Auto-fire lasers**. It 
 ## Drop balance
 
 Ordinary upgrades have an 8% roll on direct ball kills, with at least two seconds of active play between drops. Laser pickups have one quarter the weight of common upgrades and cannot spawn while a laser is already falling or active. Laser kills, Butter Bomb blasts, and explosive-brick splash do not roll ordinary drops, preventing weapon refills from creating pickup floods. The promised Classic life-drop allowance still applies to all destruction sources; the campaign safety-net limit is unchanged.
+
+Numbered masonry takes 4–6 hits (occasionally 8); POWER deals two damage per hit. Joined steel rows, gates and staggered barriers create routes while retaining outer lanes. Wide paddle expiry waits for the next paddle bounce while balls are in flight. Pickups collect whenever their visible capsule overlaps the paddle. Ball speed is 5% faster than the original tuning. Existing version-1 saves remain compatible across deployments on the same browser and URL.

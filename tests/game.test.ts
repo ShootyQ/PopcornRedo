@@ -13,7 +13,7 @@ it('reflects walls and paddle',()=>{const g=new Game();g.start('classic',0,3);g.
 });
 describe('campaign and rules',()=>{
 let g:Game;beforeEach(()=>{g=new Game();g.start('classic',0,3);});
-it('contains 30 nonempty layouts with no sealed brick rows',()=>{expect(levels).toHaveLength(30);for(let i=0;i<levels.length;i++){const bricks=makeBricks(i);expect(bricks.some(b=>b.kind!=='#')).toBe(true);expect(levels[i].rows.every(r=>r.length===BRICK_GRID.columns)).toBe(true);expect(bricks.filter(b=>b.kind==='#').length).toBeLessThan(4);}});
+it('contains 30 valid layouts with open outer routes',()=>{expect(levels).toHaveLength(30);for(let i=0;i<levels.length;i++){const bricks=makeBricks(i);expect(bricks.some(b=>b.kind!=='#')).toBe(true);expect(levels[i].rows.every(r=>r.length===BRICK_GRID.columns)).toBe(true);expect(bricks.every(b=>b.x>=19&&b.x+b.w<=360)).toBe(true);expect(levels[i].rows.every(row=>/^[ste#.4-8]+$/.test(row))).toBe(true);}});
 it('tough takes two hits; obstacles never break; explosions chain',()=>{g.bricks=makeBricks(2);const b=g.bricks.find(b=>b.kind==='t')!;g.damage(b);expect(b.hp).toBe(1);g.damage(b);expect(b.hp).toBe(0);const wall={x:0,y:0,w:42,h:21,hp:Infinity,kind:'#',color:0};g.damage(wall);expect(wall.hp).toBe(Infinity);g.bricks=[{...wall,hp:1,kind:'e'},{...wall,x:31,hp:1,kind:'e'},{...wall,x:62,hp:1,kind:'s'}];g.damage(g.bricks[0]);expect(g.bricks.every(b=>b.hp===0)).toBe(true);});
 it('power breaks tough bricks immediately',()=>{const b=makeBricks(2).find(b=>b.kind==='t')!;g.apply('strong');g.damage(b);expect(b.hp).toBe(0);});
 it('refreshes timers and freezes them during pause and countdown',()=>{g.apply('wide');g.update(1);expect(g.effects.wide).toBe(14);g.apply('wide');expect(g.effects.wide).toBe(15);g.pause();g.update(10);expect(g.effects.wide).toBe(15);g.resume();g.update(3);expect(g.effects.wide).toBe(15);g.update(15);expect(g.effects.wide).toBeUndefined();});
@@ -76,10 +76,10 @@ describe('expanded campaign and drop tuning',()=>{
   const g=new Game();g.start('classic',14,2);g.phase='clear';g.next();expect(g.level).toBe(15);expect(g.phase).toBe('playing');expect(g.lives).toBe(2);
   g.start('classic',29,2);g.phase='clear';g.next();expect(g.phase).toBe('complete');
  });
- it('keeps ordinary drop chance at eight percent',()=>{
-  expect(PICKUP_DROP_CHANCE).toBeCloseTo(.08);
+ it('keeps ordinary drop chance at fifteen percent',()=>{
+  expect(PICKUP_DROP_CHANCE).toBeCloseTo(.15);
   const random=vi.spyOn(Math,'random');
-  try{for(const [value,count] of [[.0799,1],[.08,0],[.14,0]]){random.mockReturnValue(value);const g=new Game();g.start('classic',0,3);g.damage(g.bricks[0]);expect(g.pickups).toHaveLength(count);}}finally{random.mockRestore();}
+  try{for(const [value,count] of [[.1499,1],[.15,0],[.2,0]]){random.mockReturnValue(value);const g=new Game();g.start('classic',0,3);g.damage(g.bricks[0]);expect(g.pickups).toHaveLength(count);}}finally{random.mockRestore();}
  });
  it('restores both old saves and new later levels',()=>{
   let raw='';vi.stubGlobal('localStorage',{getItem:()=>raw,setItem:(_k:string,v:string)=>{raw=v;}});
@@ -203,4 +203,45 @@ describe('powerup balance and weapon feedback loops',()=>{
   }finally{random.mockRestore();}
  });
  it('still issues the promised life budget when every brick is destroyed by weapons',()=>{const g=new Game();g.start('classic',0,3);g.lifeQuota=2;for(const brick of g.bricks)g.damage(brick,true,false);expect(g.pickups.map(p=>p.type)).toEqual(['life','life']);});
+});
+
+describe('paddle fairness and barrier masonry',()=>{
+ it.each([-1,1])('collects the visible outside edge of a pickup on side %s',side=>{
+  const g=new Game();g.start('classic',0,3);g.pickups=[{x:g.paddle+side*(g.width/2+25),y:560,type:'sticky'}];g.update(1/120);expect(g.effects.sticky).toBe(15);
+ });
+ it('does not collect separated capsules but catches a fast crossing',()=>{
+  const g=new Game();g.start('classic',0,3);g.pickups=[{x:g.paddle+g.width/2+27,y:570,type:'sticky'}];g.update(1/120);expect(g.effects.sticky).toBeUndefined();
+  g.pickups=[{x:g.paddle,y:530,type:'sticky'}];g.update(.6);expect(g.effects.sticky).toBe(15);
+ });
+ it('uses the full visible ball radius at the paddle edge',()=>{
+  const g=new Game();g.start('classic',0,3);g.balls=[{x:g.paddle+g.width/2+6.5,y:550,vx:0,vy:290,held:false}];g.update(.08);expect(g.balls[0].vy).toBeLessThan(0);
+ });
+ it('keeps an expired wide paddle through its next bounce, then shrinks',()=>{
+  const g=new Game();g.start('classic',0,3);g.apply('wide');g.effects.wide=.01;
+  g.balls=[{x:g.paddle+50,y:540,vx:0,vy:290,held:false}];g.update(.02);expect(g.width).toBe(108);expect(g.wideExpiryPending).toBe(true);
+  g.pause();g.update(20);expect(g.width).toBe(108);g.resume();g.update(3);
+  g.update(.08);expect(g.balls[0].vy).toBeLessThan(0);expect(g.width).toBe(76);
+ });
+ it('refreshes pending wide expiry and protects simultaneous multiball returns',()=>{
+  const g=new Game();g.start('classic',0,3);g.apply('wide');g.effects.wide=.001;g.action();g.update(.002);g.apply('wide');expect(g.wideExpiryPending).toBe(false);expect(g.effects.wide).toBe(15);
+  g.effects.wide=.001;g.balls=[-50,50].map(offset=>({x:g.paddle+offset,y:550,vx:0,vy:290,held:false}));g.update(.08);expect(g.balls.every(b=>b.vy<0)).toBe(true);expect(g.width).toBe(76);
+ });
+ it('adds exactly five percent to normal and slow ball speeds at every level',()=>{
+  for(let level=0;level<30;level++){const g=new Game();g.start('classic',level,3);expect(g.speed).toBeCloseTo((290+level*5)*1.05);g.apply('slow');expect(g.speed).toBeCloseTo((290+level*5)*1.05*.68);}
+ });
+ it('requires numbered barrier hits and joins steel tiles into solid rows',()=>{
+  const g=new Game();g.start('classic',29,3);
+  for(const hp of [4,5,6,8]){const b=levels.flatMap((_,i)=>makeBricks(i)).find(b=>b.kind===String(hp))!;expect(b.hp).toBe(hp);for(let n=1;n<hp;n++){g.damage(b);expect(b.hp).toBe(hp-n);}g.damage(b);expect(b.hp).toBe(0);}
+  const steel=makeBricks(28).filter(b=>b.kind==='#'&&b.y===208);expect(steel).toHaveLength(11);for(let n=1;n<steel.length;n++)expect(steel[n-1].x+steel[n-1].w).toBe(steel[n].x);
+ });
+});
+
+describe('layout update save compatibility',()=>{
+ it('retains campaign position and issued lives when a new layout has fewer bricks',()=>{
+  const map=new Map<string,string>();vi.stubGlobal('localStorage',{getItem:(k:string)=>map.get(k),setItem:(k:string,v:string)=>map.set(k,v)});
+  try{map.set('butter-pop-v1',JSON.stringify({version:1,lastMode:'classic',runs:{classic:{level:23,lives:5,safetyNet:'spent',lifeDrops:{level:23,quota:2,issued:1,destroyed:110}}}}));
+   const save=readSave();expect(save.runs.classic.level).toBe(23);expect(save.runs.classic.lives).toBe(5);expect(save.runs.classic.lifeDrops?.issued).toBe(1);expect(save.runs.classic.lifeDrops?.destroyed).toBe(makeBricks(23).filter(b=>b.kind!=='#').length);
+   writeSave(save);expect(readSave()).toEqual(save);
+  }finally{vi.unstubAllGlobals();}
+ });
 });
